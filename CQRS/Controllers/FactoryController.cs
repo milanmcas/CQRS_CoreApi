@@ -1,5 +1,7 @@
 ﻿using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.Factory;
+using CQRS.DesignPattern.Prototype;
+using CQRS.DesignPattern.Structural.Adapter;
 using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -10,7 +12,10 @@ namespace CQRS.Controllers
     [ApiController]
     public class FactoryController([FromKeyedServices("Platinum")] CreditCard platinum,
         INotificationFactory notificationFactory,
-        IHouseBuilder houseBuilder) : ControllerBase
+        IHouseBuilder houseBuilder,
+        IEmployeeService employeesService,
+        IAnalyticsAdapter analyticsAdapter
+        ) : ControllerBase
     {
         //readonly CreditCard _creditCard;
 
@@ -19,6 +24,7 @@ namespace CQRS.Controllers
         [HttpGet]
         public IEnumerable<string> Get()
         {
+            analyticsAdapter.ProcessEmployees(employeesService.GetEmployees());
             var house=houseBuilder.WithWindows(6)
                 .WithDoors(5)
                 .WithGarden(true)

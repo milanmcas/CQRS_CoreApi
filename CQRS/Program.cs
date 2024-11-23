@@ -1,6 +1,7 @@
 using CQRS.Data;
 using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.Factory;
+using CQRS.DesignPattern.Structural.Adapter;
 using CQRS.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -12,9 +13,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-
-
-
 builder.Services
     .AddGraphQLServer()
     .AddQueryType<Query>();
@@ -25,7 +23,9 @@ builder.Services.AddDbContext<OnlineShopDbContext>(options => {
 builder.Services.AddDbContext<SportsDbContext>(options => {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
-
+builder.Services.AddScoped<IAnalyticsAdapter, AnalyticsAdapter>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IPlayerService,PlayerService>();
 builder.Services.AddScoped<IHouseBuilder,HouseBuilder>();
 builder.Services.AddScoped<PlayerDbContext>();
