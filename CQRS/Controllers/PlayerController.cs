@@ -22,6 +22,8 @@ namespace CQRS.Controllers
         [HttpGet]
         public async Task<IEnumerable<Player>> GetPlayers()
         {
+            HttpContext.Session.SetInt32("UserId", 123456);
+            HttpContext.Session.SetString("UserName", "info@dotnettutorials.net");
             return await _mediator.Send(new GetAllPlayersQuery());
         }
         [HttpGet("GetPlayerById")]

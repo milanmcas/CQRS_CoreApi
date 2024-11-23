@@ -6,9 +6,9 @@ namespace CQRS.Services
 {
     public class PlayerService:IPlayerService
     {
-        private readonly FootballDbContext _context;
+        private readonly PlayerDbContext _context;
 
-        public PlayerService(FootballDbContext context)
+        public PlayerService(PlayerDbContext context)
         {
             _context = context;
         }
