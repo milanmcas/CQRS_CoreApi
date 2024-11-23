@@ -2,6 +2,7 @@
 using CQRS.DesignPattern.Factory;
 using CQRS.DesignPattern.Prototype;
 using CQRS.DesignPattern.Structural.Adapter;
+using CQRS.DesignPattern.Structural.Decorator;
 using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -14,7 +15,8 @@ namespace CQRS.Controllers
         INotificationFactory notificationFactory,
         IHouseBuilder houseBuilder,
         IEmployeeService employeesService,
-        IAnalyticsAdapter analyticsAdapter
+        IAnalyticsAdapter analyticsAdapter,
+        FoodDecorator foodDecorator
         ) : ControllerBase
     {
         //readonly CreditCard _creditCard;
@@ -24,6 +26,7 @@ namespace CQRS.Controllers
         [HttpGet]
         public IEnumerable<string> Get()
         {
+
             analyticsAdapter.ProcessEmployees(employeesService.GetEmployees());
             var house=houseBuilder.WithWindows(6)
                 .WithDoors(5)
@@ -31,7 +34,8 @@ namespace CQRS.Controllers
                 .Build();
             Console.WriteLine(platinum.GetCreditLimit());
             notificationFactory.CreateNotification("email").Send("milan","priya");
-            return new string[] { "value1", "value2", platinum.GetCreditLimit().ToString(), house.ToString() };
+            return new string[] { "value1", "value2", platinum.GetCreditLimit().ToString(), 
+                house.ToString(),foodDecorator.Description() };
         }
 
         // GET api/<FactoryController>/5

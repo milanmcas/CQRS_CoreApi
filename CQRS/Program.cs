@@ -2,6 +2,7 @@ using CQRS.Data;
 using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.Factory;
 using CQRS.DesignPattern.Structural.Adapter;
+using CQRS.DesignPattern.Structural.Decorator;
 using CQRS.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,11 @@ builder.Services.AddDbContext<OnlineShopDbContext>(options => {
 });
 builder.Services.AddDbContext<SportsDbContext>(options => {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+builder.Services.AddScoped<Food, Sandwich>();
+builder.Services.AddScoped<FoodDecorator>(options => {
+    var _food = options.GetService<Food>();
+    return new CheeseDecorator(_food);
 });
 builder.Services.AddScoped<IAnalyticsAdapter, AnalyticsAdapter>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
