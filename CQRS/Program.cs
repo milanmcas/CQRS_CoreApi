@@ -6,6 +6,8 @@ using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.Factory;
 using CQRS.DesignPattern.Structural.Adapter;
 using CQRS.DesignPattern.Structural.Decorator;
+using CQRS.DesignPattern.Structural.Decorator.Live;
+using CQRS.DesignPattern.Structural.Decorator.Live.FQCost;
 using CQRS.Interceptor;
 using CQRS.ServiceLife;
 using CQRS.Services;
@@ -13,6 +15,7 @@ using MediatR;
 using MediatR.NotificationPublishers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using static CQRS.Services.SingletonService;
@@ -55,6 +58,11 @@ builder.Services.AddScoped<FoodDecorator>(options => {
     var _food = options.GetService<Food>();
     return new CheeseDecorator(_food);
 });
+builder.Services.AddScoped<ClassicPriceService>();
+builder.Services.AddScoped<IPriceService>(provider =>new TelematicsPriceService(
+    provider.GetRequiredService<ClassicPriceService>()
+    ));
+//https://andrewlock.net/adding-decorated-classes-to-the-asp.net-core-di-container-using-scrutor/ - decorator pattern with DI
 builder.Services.AddScoped<IAnalyticsAdapter, AnalyticsAdapter>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
