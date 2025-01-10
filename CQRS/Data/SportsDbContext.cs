@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Alachisoft.NCache.EntityFrameworkCore;
 using CQRS.FootballModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +19,14 @@ public partial class SportsDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlServer("Data Source=DRPRIYATMAA;Initial Catalog=FootballDb;User ID=milan;Password=milan;Trust Server Certificate=True;");
+        string cacheId = "myClusteredCache";
+        NCacheConfiguration.Configure(cacheId, DependencyType.SqlServer);
+        NCacheConfiguration.ConfigureLogger();
+        optionsBuilder.UseSqlServer("Data Source=DRPRIYATMAA;Initial Catalog=FootballDb;User ID=milan;Password=milan;Trust Server Certificate=True;")
+            .UseLazyLoadingProxies();
+        //https://www.alachisoft.com/ncache/ef-core-cache.html#:~:text=The%20most%20common%20data%20to,application%20reads%20it%20multiple%20times.
+        //https://www.c-sharpcorner.com/article/caching-in-entity-framework-ef-core-using-ncache/
+
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

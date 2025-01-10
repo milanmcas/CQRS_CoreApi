@@ -1,14 +1,19 @@
-﻿using CQRS.DesignPattern.Builder;
+﻿using CQRS.DesignPattern.Behavioral.Observer.Notification;
+using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.Factory;
 using CQRS.DesignPattern.Prototype;
 using CQRS.DesignPattern.Structural.Adapter;
 using CQRS.DesignPattern.Structural.Decorator;
+using CQRS.ServiceLife;
+using CQRS.Services;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace CQRS.Controllers
 {
+    [EnableCors("MyPolicy")]
     [Route("api/[controller]")]
     [ApiController]
     public class FactoryController([FromKeyedServices("Platinum")] CreditCard platinum,
@@ -16,17 +21,51 @@ namespace CQRS.Controllers
         IHouseBuilder houseBuilder,
         IEmployeeService employeesService,
         IAnalyticsAdapter analyticsAdapter,
-        FoodDecorator foodDecorator
+        FoodDecorator foodDecorator,
+        IScopedService scopedService,
+        IScopedService scopedService1,
+        ITransientService transientService,
+        ITransientService transientService1,
+        ITransientService1 transientService11,
+        ITransientService1 transientService12,
+        ISingletonService singletonService,
+        ISingletonService singletonService1,
+        IScopedService2 scopedService2,
+        IScopedService2 scopedService21,
+        ITransientService2 transientService2,
+        ITransientService2 transientService21,
+        IMasterUser masterUser,
+        IUserService userService,
+        Notifier notifier   
         ) : ControllerBase
     {
         //readonly CreditCard _creditCard;
 
-        
+
         // GET: api/<FactoryController>
+        [DisableCors]
         [HttpGet]
         public IEnumerable<string> Get()
         {
-
+            notifier.Process("Hi product");
+            userService.Name = "Milan";
+            userService.Age = 32;
+            userService.Print();
+            masterUser.Print();
+            userService.Print();
+            transientService2.Print();
+            transientService21.Print();
+            //scopedService2.Print();
+            //scopedService21.Print();
+            //singletonService.Print();
+            //singletonService1.Print();
+            //transientService11.Print();
+            //transientService12.Print();
+            //transientService.Print();
+            //transientService1.Print();
+            //scopedService.Print();
+            //scopedService1.Print();
+            
             analyticsAdapter.ProcessEmployees(employeesService.GetEmployees());
             var house=houseBuilder.WithWindows(6)
                 .WithDoors(5)
