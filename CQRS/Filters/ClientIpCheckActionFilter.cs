@@ -9,11 +9,11 @@ namespace CQRS.Filters
         private readonly ILogger _logger;
         private readonly string _safelist;
 
-        public ClientIpCheckActionFilter(string safelist, ILogger logger)
-        {
-            _safelist = safelist;
-            _logger = logger;
-        }
+        //public ClientIpCheckActionFilter(string safelist, ILogger logger)
+        //{
+        //    _safelist = safelist;
+        //    _logger = logger;
+        //}
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
@@ -40,7 +40,7 @@ namespace CQRS.Filters
 
             if (badIp)
             {
-                _logger.LogWarning("Forbidden Request from IP: {RemoteIp}", remoteIp);
+                //_logger.LogWarning("Forbidden Request from IP: {RemoteIp}", remoteIp);
                 context.Result = new StatusCodeResult(StatusCodes.Status403Forbidden);
                 return;
             }

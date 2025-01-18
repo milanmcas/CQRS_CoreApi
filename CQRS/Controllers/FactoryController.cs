@@ -2,8 +2,12 @@
 using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.Factory;
 using CQRS.DesignPattern.Prototype;
+using CQRS.DesignPattern.Singleton;
 using CQRS.DesignPattern.Structural.Adapter;
 using CQRS.DesignPattern.Structural.Decorator;
+using CQRS.DesignPattern.Structural.Decorator.Live.FQCost;
+using CQRS.Filters;
+using CQRS.OOPS;
 using CQRS.ServiceLife;
 using CQRS.Services;
 using Microsoft.AspNetCore.Cors;
@@ -13,6 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CQRS.Controllers
 {
+    //[ClientIpCheckActionFilter]
     [EnableCors("MyPolicy")]
     [Route("api/[controller]")]
     [ApiController]
@@ -36,7 +41,11 @@ namespace CQRS.Controllers
         ITransientService2 transientService21,
         IMasterUser masterUser,
         IUserService userService,
-        Notifier notifier   
+        Notifier notifier,
+        IPriceService priceService,
+        ISingleton singleton
+
+
         ) : ControllerBase
     {
         //readonly CreditCard _creditCard;
@@ -65,7 +74,11 @@ namespace CQRS.Controllers
             //transientService1.Print();
             //scopedService.Print();
             //scopedService1.Print();
-            
+
+            Brand brand = new OOPS.Version();
+            brand.GetData("A");
+
+            singleton.PrintDetails("milan");
             analyticsAdapter.ProcessEmployees(employeesService.GetEmployees());
             var house=houseBuilder.WithWindows(6)
                 .WithDoors(5)
@@ -74,7 +87,7 @@ namespace CQRS.Controllers
             Console.WriteLine(platinum.GetCreditLimit());
             notificationFactory.CreateNotification("email").Send("milan","priya");
             return new string[] { "value1", "value2", platinum.GetCreditLimit().ToString(), 
-                house.ToString(),foodDecorator.Description() };
+                house.ToString(),foodDecorator.Description(),priceService.BasePrice().ToString() };
         }
 
         // GET api/<FactoryController>/5

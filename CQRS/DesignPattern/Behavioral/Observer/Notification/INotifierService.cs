@@ -52,7 +52,7 @@ namespace CQRS.DesignPattern.Behavioral.Observer.Notification
                 observerList = _observerList;
                 foreach (var notificationType in observerList)
                 {
-                    var nobject = _notificationFactory.CreateNotification(notificationType);
+                IMessageNotificationService nobject = _notificationFactory.CreateNotification(notificationType);
                     _subject.Attach(nobject);
                 }
             

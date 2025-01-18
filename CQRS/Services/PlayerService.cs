@@ -17,7 +17,13 @@ namespace CQRS.Services
         }
         public IQueryable<Student> GetStudents()
         {
+            //var student = GetStudentsByName(x => x.StartsWith("mi"));
+            //var student1 = GetStudentsByName(x => x.Contains("mi"));
             return _context.Student.Include(x=>x.Books);
+        }
+        public  Student? GetStudentsByName(Func<string, bool> expression)
+        {
+            return _context.Student.FirstOrDefault(x => expression(x.Name));
         }
         public IQueryable<Product> GetProducts() {
             return  _context.Products;

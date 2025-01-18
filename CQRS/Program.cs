@@ -4,17 +4,23 @@ using CQRS.Data.Repository;
 using CQRS.DesignPattern.Behavioral.Observer.Notification;
 using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.Factory;
+using CQRS.DesignPattern.Singleton;
 using CQRS.DesignPattern.Structural.Adapter;
 using CQRS.DesignPattern.Structural.Decorator;
 using CQRS.DesignPattern.Structural.Decorator.Live;
 using CQRS.DesignPattern.Structural.Decorator.Live.FQCost;
+using CQRS.DesignPattern.Structural.Decorator.Notification;
+using CQRS.Features;
 using CQRS.Interceptor;
+using CQRS.NotificationSystem;
 using CQRS.ServiceLife;
 using CQRS.Services;
 using MediatR;
 using MediatR.NotificationPublishers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using ProtoBuf.Extended.Meta;
 using System;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -32,8 +38,13 @@ builder.Services.AddScoped<IScopedService2, ScopedService2>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddTransient<IMasterUser,MasterUser>();
 builder.Services.AddSingleton<ISingletonService, SingletonService>();
+builder.Services.AddSingleton<ISingleton>(options =>
+{
+    return Singleton.GetInstance();
+});
 builder.Services.AddSingleton<ISingletonService1, SingletonService1>();
-builder.Services.AddTransient<INotifierService,NotifierService>();
+//builder.Services.AddTransient<INotifierService,NotifierService>();
+builder.Services.AddTransient<INotifierService, NotifierDelegateService>();
 builder.Services.AddTransient<ObserverFactory>();
 builder.Services.AddTransient<Notifier>();
 //builder.Services.AddScoped<OnlineShopDbContext>();
@@ -58,6 +69,19 @@ builder.Services.AddScoped<FoodDecorator>(options => {
     var _food = options.GetService<Food>();
     return new CheeseDecorator(_food);
 });
+builder.Services.AddSingleton<CQRS.DesignPattern.Structural.Decorator.Notification.INotification,CQRS.DesignPattern.Structural.Decorator.Notification.EmailNotification>();
+builder.Services.AddScoped(serviceProvider =>
+{
+    var notificationService = serviceProvider.GetService<CQRS.DesignPattern.Structural.Decorator.Notification.INotification>();
+    //var logger = serviceProvider.GetService<ILogger<NotificationDecorator>>();
+
+    //var playerService = serviceProvider.GetRequiredService<PlayersService>();
+
+    NotificationDecorator smsDecorator = new SMSNotification(notificationService);
+    NotificationDecorator tpaDecorator = new ThirdpartyAPINotification(smsDecorator);
+
+    return tpaDecorator;
+});
 builder.Services.AddScoped<ClassicPriceService>();
 builder.Services.AddScoped<IPriceService>(provider =>new TelematicsPriceService(
     provider.GetRequiredService<ClassicPriceService>()
@@ -71,6 +95,11 @@ builder.Services.AddScoped<IHouseBuilder,HouseBuilder>();
 builder.Services.AddScoped<PlayerDbContext>();
 //builder.Services.AddScoped<SportsDbContext>();
 builder.Services.AddScoped<IFootballService, FootballService>();
+
+builder.Services.AddSingleton<TranslationDatabase>();
+builder.Services.AddTransient<TranslationTransformer>();
+
+builder.Services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 //builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
 builder.Services.AddMediatR(config =>
 {
@@ -127,8 +156,8 @@ builder.Services.AddScoped<PushNotification>()
 
 builder.Services.AddScoped<SmsNotification>()
             .AddScoped<CQRS.DesignPattern.Factory.INotification, SmsNotification>(s => s.GetService<SmsNotification>());
-builder.Services.AddScoped<EmailNotification>()
-            .AddScoped<CQRS.DesignPattern.Factory.INotification, EmailNotification>(s => s.GetService<EmailNotification>());
+builder.Services.AddScoped<CQRS.DesignPattern.Factory.EmailNotification>()
+            .AddScoped<CQRS.DesignPattern.Factory.INotification, CQRS.DesignPattern.Factory.EmailNotification>(s => s.GetService<CQRS.DesignPattern.Factory.EmailNotification>());
 
 builder.Services.AddKeyedScoped<CreditCard, MoneyBack>("MoneyBack");
 builder.Services.AddKeyedScoped<CreditCard, Titanium>("Titanium");
@@ -201,6 +230,8 @@ app.UseSession();
 //app.UseNCacheSession(); // store NCache session data    
 app.MapGraphQL();///graphql
 //app.MapGraphQL("/my/graphql/endpoint");
+app.MapDynamicControllerRoute<TranslationTransformer>("{language}/{controller}/{action}");
 app.MapControllers();
+//app.MapDynamicControllerRoute()
 
 app.Run();

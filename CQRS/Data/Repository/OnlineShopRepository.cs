@@ -1,5 +1,7 @@
-﻿using CQRS.Models;
+﻿using Alachisoft.NCache.Common.Extensibility.Client.RPC;
+using CQRS.Models;
 using Microsoft.EntityFrameworkCore;
+using Thinktecture;
 
 namespace CQRS.Data.Repository
 {
@@ -12,10 +14,15 @@ namespace CQRS.Data.Repository
         }
         async Task<IEnumerable<Order>> IOnlineShopRepository.GetOrders()
         {
+            //_context.Orders.OrderByDescending(x => x.OrderDate).Select(x => new
+            //{
+            //    rowNo = EF.Functions.RowNumber(x.OrderDate) 
+            //});
             return await _context.Orders
                 .ToListAsync();
             //_context.Database.ExecuteSql()
             //_context.Database.
+            
         }
         public IQueryable<Order> GetOnlineOrders()
         {

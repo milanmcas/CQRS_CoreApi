@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.Session.NCache" Version="5.3.4" />
+    <PackageReference Include="EntityFrameworkCore.Data.QueryBuilder" Version="8.0.3" />
     <PackageReference Include="EntityFrameworkCore.NCache" Version="5.3.4" />
     <PackageReference Include="HotChocolate.AspNetCore" Version="14.1.0" />
     <PackageReference Include="MediatR" Version="12.4.1" />
@@ -26,6 +27,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11">
       <PrivateAssets>all</PrivateAssets>
@@ -35,6 +37,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Thinktecture.EntityFrameworkCore.SqlServer" Version="8.4.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -47,6 +50,11 @@
     <None Update="tls.ncconf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DesignPattern\Structural\Facade\" />
+    <Folder Include="NewFolder\" />
   </ItemGroup>
 
 </Project>

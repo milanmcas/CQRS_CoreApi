@@ -48,5 +48,72 @@
             
         }
     }
-    
+    /// <summary>
+    /// Encapsulation
+    /// </summary>
+    public class Dog
+    {
+        private string name;
+        private string breed;
+
+        public string Breed { 
+            get { return breed; } 
+            set { breed = value; }
+        }
+        public void SetName(string name)
+        {
+            this.name = name;
+        }
+        public string GetName()
+        {
+            return name;
+        }
+    }
+    /// <summary>
+    /// Inheritance
+    /// </summary>
+    //public class Animal
+    //{
+    //    public string name;
+    //    public void Print() { }
+    //}
+    //public class Cat : Animal
+    //{
+    //    public string breed;
+    //    public void Add() { }
+    //}
+
+    /// <summary>
+    /// Polyphormism
+    /// In this example, the `Dog` class overrides the `Sound` method of the `Animal` class. 
+    /// This allows us to make the `Dog` object perform its own `Sound` action, even when called with an `Animal` reference.
+    /// </summary>
+    public class Animal
+    {
+        public virtual void Sound()
+        {
+            Console.WriteLine("The animal makes a sound");
+        }
+    }   
+    public class Cat: Animal
+    {
+        public override void Sound()
+        {
+            Console.WriteLine("The cat barks");
+        }
+    }
+    /// <summary>
+    /// Abstraction
+    /// </summary>
+    public abstract class Bird
+    {
+        public abstract void Sound();
+    }
+    public class Parrot : Bird
+    {
+        public override void Sound()
+        {
+            Console.WriteLine("The dog barks");
+        }
+    }
 }

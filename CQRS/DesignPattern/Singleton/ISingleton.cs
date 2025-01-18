@@ -1,11 +1,12 @@
-﻿namespace CQRS.DesignPattern.Singleton
+﻿
+namespace CQRS.DesignPattern.Singleton
 {
     public interface ISingleton
     {
         void PrintDetails(string message);
-        ISingleton GetInstance();
+        //ISingleton GetInstance();
     }
-    public sealed class Singleton
+    public sealed class Singleton: ISingleton
     {
         //This variable value will be increment by 1 each time the object of the class is created
         private static int Counter = 0;
@@ -13,7 +14,7 @@
         private static Singleton? Instance;
         private static readonly object padlock = new object();
         //The following Static Method is going to return the Singleton Instance
-        public static Singleton GetInstance()
+        public static ISingleton GetInstance()
         {
             //If the variable instance is null, then create the Singleton instance 
             //else return the already created singleton instance
@@ -39,7 +40,37 @@
         //The following can be accesed from outside of the class by using the Singleton Instance
         public void PrintDetails(string message)
         {
-            Console.WriteLine(message);
+            Console.WriteLine("PrintDetails singeton - " + message);
+        }
+    }
+    public interface ILogger
+    {
+        void Log(string message);        
+    }
+    public sealed class Logger : ILogger
+    {
+        private Logger()
+        {
+
+        }
+        private static Logger? Instance;
+        private static readonly object padlock = new object();
+
+        public void Log(string message)
+        {
+            
+        }
+        public static ILogger GetInstance()
+        {
+            lock (padlock)
+            {
+                if (Instance == null)
+                {
+                    Instance = new Logger();
+                }
+                //Return the Singleton Instance
+                return Instance;
+            }
         }
     }
 }

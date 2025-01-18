@@ -14,5 +14,6 @@ namespace CQRS.Services
         Task<List<Player>> CreateBulkTablePlayers(List<Player> players);
         Task<int> UpdatePlayer(Player player);
         Task<int> DeletePlayer(Player player);
+        Student? GetStudentsByName(Func<string, bool> expression);
     }
 }
