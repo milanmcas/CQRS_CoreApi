@@ -6,16 +6,41 @@ namespace CQRS.Data
 {
     public class SampleCpntext : DbContext
     {
-       // public SampleCpntext(DbContextOptions<PlayerDbContext> options)
-       //: base(options)
-       // {
-       // }
+        public DbSet<City> City { get; set; }
+        public DbSet<Country> Country { get; set; }
+        public DbSet<Teacher> Teacher { get; set; }
+        public DbSet<Student1> Student { get; set; }
+        public DbSet<City1> City1 { get; set; }
+        public DbSet<CityInformation> CityInformation { get; set; }
+        // public SampleCpntext(DbContextOptions<PlayerDbContext> options)
+        //: base(options)
+        // {
+        // }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Contact>()
-           .Property<DateTime>("LastUpdated").HasDefaultValueSql("GETDATE()");
+           .Property<DateTime>("LastUpdated").HasDefaultValueSql("GETDATE()");//shadow property
             modelBuilder.Entity<Contact>().Property(e => e.Email).HasDefaultValue("milan@gmail.com");
-                //.ValueGeneratedOnAddOrUpdate();//.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Save); 
+
+            modelBuilder.Entity<City1>()
+                    .HasOne(e => e.CityInformation)
+                    .WithOne(e => e.City)
+                    .HasForeignKey<CityInformation>(e => e.CityId)
+                    .IsRequired();
+
+            modelBuilder.Entity<City>()
+                    .HasOne(e => e.Country)
+                    .WithMany(e => e.City)
+                    .HasForeignKey(e => e.FKCountry)
+                    .IsRequired();
+
+            modelBuilder.Entity<TeacherStudent>()
+                .HasKey(t => new { t.StudentId, t.TeacherId }); // composite primary key
+            modelBuilder.Entity<Student1>()
+                        .HasMany(e => e.Teacher)
+                        .WithMany(e => e.Student)
+                        .UsingEntity<TeacherStudent>();
+            //.ValueGeneratedOnAddOrUpdate();//.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Save); 
             //base.OnModelCreating(modelBuilder);
         }
 

@@ -2,6 +2,7 @@ using Alachisoft.NCache.Web.SessionState;
 using CQRS.Data;
 using CQRS.Data.Repository;
 using CQRS.DesignPattern.Behavioral.Observer.Notification;
+using CQRS.DesignPattern.Behavioral.Strategy;
 using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.Factory;
 using CQRS.DesignPattern.Singleton;
@@ -162,6 +163,9 @@ builder.Services.AddScoped<CQRS.DesignPattern.Factory.EmailNotification>()
 builder.Services.AddKeyedScoped<CreditCard, MoneyBack>("MoneyBack");
 builder.Services.AddKeyedScoped<CreditCard, Titanium>("Titanium");
 builder.Services.AddKeyedScoped<CreditCard, Platinum>("Platinum");
+
+builder.Services.AddScoped<IAggregatorRequestServiceFactory, AggregatorRequestServiceFactory>();
+builder.Services.AddScoped<IRequestProcessor, RequestProcessor>();
 
 builder.Services.AddControllers();
 
