@@ -20,7 +20,7 @@
         public int StudentId { get; set; }  //foreign key property
         public int TeacherId { get; set; }  //foreign key property
 
-        public Student Student_R { get; set; } = null!; //Reference navigation property
+        public Student1 Student_R { get; set; } = null!; //Reference navigation property
         public Teacher Teacher_R { get; set; } = null!; //Reference navigation property
     }
 }

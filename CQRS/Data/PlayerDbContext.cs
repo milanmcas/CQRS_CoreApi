@@ -55,15 +55,17 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             .GetMethod(nameof(GetProductDetail))
             ).HasName("GetProducts");
 
-        //modelBuilder.Entity<StudentCourses>()
-        //        .HasKey(sc => new { sc.StudentId, sc.BookId }); // Composite Key for Join Table
 
+        modelBuilder.Entity<StudentCourses>()
+                .HasKey(sc => new { sc.StudentId, sc.BookId }); // Composite Key for Join Table
+        modelBuilder.Entity<Book>().HasKey(x => x.Id);
+        modelBuilder.Entity<Student>().HasKey(x => x.Id);
         modelBuilder.Entity<Student>()
             .HasMany(s => s.Books)
             .WithMany(c => c.Students)
             .UsingEntity<StudentCourses>(
-            l => l.HasOne<Book>(e => e.Book).WithMany(e => e.StudentCourses),
-            r => r.HasOne<Student>(e => e.Student).WithMany(e => e.StudentCourses));
+            l => l.HasOne<Book>(e => e.Book).WithMany().HasForeignKey(x => x.BookId),
+            r => r.HasOne<Student>(e => e.Student).WithMany().HasForeignKey(x => x.StudentId));
 
         //.UsingEntity(j => j.ToTable("StudentCourses"));
 

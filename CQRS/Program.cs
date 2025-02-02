@@ -1,4 +1,5 @@
 using Alachisoft.NCache.Web.SessionState;
+using Asp.Versioning;
 using CQRS.Data;
 using CQRS.Data.Repository;
 using CQRS.DesignPattern.Behavioral.Observer.Notification;
@@ -12,6 +13,7 @@ using CQRS.DesignPattern.Structural.Decorator.Live;
 using CQRS.DesignPattern.Structural.Decorator.Live.FQCost;
 using CQRS.DesignPattern.Structural.Decorator.Notification;
 using CQRS.Features;
+using CQRS.Handler;
 using CQRS.Interceptor;
 using CQRS.NotificationSystem;
 using CQRS.ServiceLife;
@@ -21,6 +23,7 @@ using MediatR.NotificationPublishers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using ProtoBuf.Extended.Meta;
 using System;
 using System.Reflection;
@@ -166,7 +169,7 @@ builder.Services.AddKeyedScoped<CreditCard, Platinum>("Platinum");
 
 builder.Services.AddScoped<IAggregatorRequestServiceFactory, AggregatorRequestServiceFactory>();
 builder.Services.AddScoped<IRequestProcessor, RequestProcessor>();
-
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddControllers();
 
 //builder.Services.AddKeyedScoped<CreditCard, MoneyBack>(Card.MoneyBack);
@@ -202,6 +205,21 @@ builder.Services.AddSession(options =>
     options.Cookie.Name = "CQRS.Session";
     options.IdleTimeout = TimeSpan.FromMinutes(1);
 });
+
+builder.Services.AddApiVersioning(apiVerConfig =>
+{
+    apiVerConfig.ReportApiVersions = true;
+    apiVerConfig.AssumeDefaultVersionWhenUnspecified = true;
+    apiVerConfig.DefaultApiVersion = new ApiVersion(1,0);
+}).AddApiExplorer(
+    options =>
+    {
+        options.AssumeDefaultVersionWhenUnspecified=true;
+        options.DefaultApiVersion = new ApiVersion(1,0);
+        options.GroupNameFormat = "'v'VVV";
+        //options.SubstituteApiVersionInUrl = true;
+    }); 
+
 builder.Services.AddControllers().AddXmlSerializerFormatters()
     .AddXmlDataContractSerializerFormatters()
     .AddJsonOptions(x =>
@@ -219,7 +237,7 @@ builder.Services.AddControllers().AddXmlSerializerFormatters()
 //});
 
 var app = builder.Build();
-
+app.UseExceptionHandler("/error");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

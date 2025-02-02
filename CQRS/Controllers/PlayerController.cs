@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Concurrent;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace CQRS.Controllers
@@ -74,13 +75,15 @@ namespace CQRS.Controllers
         [HttpPost]
         public async Task<Player> Create(CreatePlayerCommand cmd)
         {
+            //var partitioner=new Partitioner(cmd);
             try
             {
                 if (ModelState.IsValid)
                 {
                     var player=await _mediator.Send(cmd);
                     
-                    await this._publisher.Publish(new PlayerCreatedEvent(player.Id, player.Name));
+                    await this._publisher.Publish
+                        (new PlayerCreatedEvent(player.Id, player.Name));
                     return player;
                     //return await _mediator.Send(cmd);
                     //return RedirectToAction(nameof(Index));
