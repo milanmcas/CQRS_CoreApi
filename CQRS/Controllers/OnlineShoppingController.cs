@@ -1,12 +1,16 @@
 ﻿using Alachisoft.NCache.Web.Caching;
 using CQRS.Data;
 using CQRS.Data.Repository;
+using CQRS.Extensions;
 using CQRS.Models;
+using CQRS.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.ObjectPool;
 using System.Data;
+using System.Data.Common;
 using System.Text.Json;
 using System.Transactions;
 
@@ -35,6 +39,11 @@ namespace CQRS.Controllers
             _distributedCache= distributedCache;
         }
         // GET: api/<OnlineShoppingController>
+        //[HttpGet]
+        //public IhttpActionResult getd()
+        //{
+
+        //}
         [HttpGet]
         public IEnumerable<string> Get()
         {
@@ -68,9 +77,13 @@ namespace CQRS.Controllers
         public async Task<ProductModel> getProductModels()
         {
             var prodModel = new ProductModel();
+            
+            
             try
             {
-                
+                var aa= _sampleCpntext.productNews.FromSql($"USP_GetMultiSetProducts").ToList();
+                //var prodModelList = GetStoredProcedure("USP_GetMultiSetProducts")
+                //.ExecuteStoredProcedure<product_category>();
                 using (var connection = _sampleCpntext.Database.GetDbConnection())
                 {
                     await connection.OpenAsync();
@@ -108,6 +121,20 @@ namespace CQRS.Controllers
             }
             
             return prodModel;
+        }
+        [HttpPost("add/blog")]
+        public async Task<IActionResult> AddBlog(Blog blog)
+        {
+            try
+            {
+                //var blogs= _sampleCpntext.Blogs.ToList();
+                await _sampleCpntext.Blogs.AddAsync(blog);
+            }
+            catch (Exception ex) { 
+                Console.WriteLine($"Error {ex.ToString()}");
+            }
+            
+            return Ok(blog);
         }
         [HttpPost("add/product")]
         public async ValueTask<int> InsertProduct(productNew product)
@@ -172,6 +199,17 @@ namespace CQRS.Controllers
         [HttpPost]
         public IActionResult Post([FromBody] Contact value)
         {
+            //Object Pooling
+            // Example of object pooling
+            //ObjectPool<Blog> pool = new ObjectPool<Blog>(() => new Blog());
+
+            // Get an object from the pool
+            //Blog obj = pool.Get();
+
+            // Use the object
+
+            // Return the object to the pool
+            //pool.Return(obj);
             try
             {
                 var aa = new { name = "milan" };
@@ -187,6 +225,7 @@ namespace CQRS.Controllers
                 //    FirstName=value.FirstName,
                 //    LastName=value.LastName
                 //};
+                //_sampleCpntext.Database.BeginTransaction();
                 // Enable implicit distributed transactions in case operations span multiple databases
                 TransactionManager.ImplicitDistributedTransactions = true;
                 // Define transaction options: Isolation level (ReadCommitted) and timeout duration (default 1 minute)
@@ -227,6 +266,18 @@ namespace CQRS.Controllers
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+        }
+        private DbCommand GetStoredProcedure(string name, params (string,object)[] nameValueParams)
+        {
+            return _sampleCpntext
+                .LoadStoredProcedure(name)
+                .WithSqlParams(nameValueParams);
+        }
+        private DbCommand GetStoredProcedure(string name)
+        {
+            return _sampleCpntext
+                .LoadStoredProcedure(name);
+                
         }
     }
 }

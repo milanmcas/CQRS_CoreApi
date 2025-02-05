@@ -15,12 +15,24 @@ namespace CQRS.Data
         public DbSet<CityInformation> CityInformation { get; set; }
         public DbSet<product_category> product_Categories { get; set; }
         public DbSet<ProductModel> productModels { get; set; }
+        public DbSet<Blog> Blogs { get; set; }
+        public DbSet<RssBlog> RssBlogs { get; set; }
+        public DbSet<CustomerTemp> CustomerTemps { get; set; }
         // public SampleCpntext(DbContextOptions<PlayerDbContext> options)
         //: base(options)
         // {
         // }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            //modelBuilder.Entity<Vehicle>().HasKey((v) => v.ModelCode);
+            modelBuilder.Entity<CustomerTemp>().Ignore(x=>x.DateOfBirth);
+            modelBuilder.Ignore<AuditLog>();//ignore entity**
+            modelBuilder.Entity<Blog>()
+                .HasDiscriminator<string>("blog_type")
+                .HasValue<Blog>("blog_base")
+                .HasValue<RssBlog>("blog_rss");
+            //.HasKey(b => b.BlogId);
+
             modelBuilder.Entity<productNew>()
                 .HasKey(x => x.product_id);
             modelBuilder.Entity<product_category>()
