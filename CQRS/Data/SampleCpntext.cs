@@ -18,12 +18,29 @@ namespace CQRS.Data
         public DbSet<Blog> Blogs { get; set; }
         public DbSet<RssBlog> RssBlogs { get; set; }
         public DbSet<CustomerTemp> CustomerTemps { get; set; }
+        public DbSet<Product3> Product3 { get; set; }
+        public DbSet<Product1> Product1 { get; set; }
         // public SampleCpntext(DbContextOptions<PlayerDbContext> options)
         //: base(options)
         // {
         // }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CustomerTemp>().HasNoKey();
+    //        modelBuilder.Entity<Book>()
+    //.HasQueryFilter(x => !x.IsDeleted);
+            //modelBuilder.Entity<Course>()
+            //    .Property(c => c.RecordNum)
+            //    .ValueGeneratedOnAdd();
+            modelBuilder.Entity<Course>()
+               .Property(s => s.CreatedDate)
+            .HasDefaultValueSql("GETDATE()");
+            //concurrency handling
+            modelBuilder.Entity<Product3>().Property(x=>x.Version)
+                .IsConcurrencyToken()
+                .ValueGeneratedOnAddOrUpdate();
+            modelBuilder.Entity<Product1>()
+            .Property(a => a.RowVersion).IsRowVersion();
             //modelBuilder.Entity<Vehicle>().HasKey((v) => v.ModelCode);
             modelBuilder.Entity<CustomerTemp>().Ignore(x=>x.DateOfBirth);
             modelBuilder.Ignore<AuditLog>();//ignore entity**
@@ -80,7 +97,7 @@ namespace CQRS.Data
         {
             //https://www.csharptutorial.net/entity-framework-core-tutorial/ef-core-log-sql-query/#:~:text=To%20log%20information%20generated%20by%20EF%20Core%20to,class%20like%20this%3A%20DbContextOptionsBuilder%20optionsBuilder%20optionsBuilder%20.UseSqlServer%28connectionString%29%20.LogTo%28target%29
             //base.OnConfiguring(optionsBuilder);
-            optionsBuilder.UseSqlServer("Data Source=DRPRIYATMAA;Initial Catalog=RND1;User ID=milan;Password=milan;Trust Server Certificate=True;");
+            optionsBuilder.UseSqlServer("Data Source=DRPRIYATMAA;Initial Catalog=RND1;User ID=milan;Password=priya;Trust Server Certificate=True;");
                 //.LogTo(Console.WriteLine)
                 //.EnableSensitiveDataLogging();
         }

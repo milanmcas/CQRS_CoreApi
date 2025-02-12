@@ -6,8 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>8d5185f3-f917-4856-9198-2e11e99fd463</UserSecretsId>
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+     
   </PropertyGroup>
-
+  
   <!--<ItemGroup>
     <Compile Remove="Services\**" />
     <Content Remove="Services\**" />
@@ -19,11 +20,14 @@
     <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
     <PackageReference Include="AspNetCore.Session.NCache" Version="5.3.4" />
+    <PackageReference Include="Azure.Messaging.EventGrid" Version="4.29.0" />
     <PackageReference Include="EntityFrameworkCore.Data.QueryBuilder" Version="8.0.3" />
     <PackageReference Include="EntityFrameworkCore.NCache" Version="5.3.4" />
     <PackageReference Include="HotChocolate.AspNetCore" Version="14.1.0" />
     <PackageReference Include="MediatR" Version="12.4.1" />
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

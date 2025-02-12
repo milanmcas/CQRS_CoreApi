@@ -1,6 +1,9 @@
 ﻿using Alachisoft.NCache.Common.Extensibility.Client.RPC;
+using Alachisoft.NCache.Licensing.DOM;
 using CQRS.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Data.SqlClient;
+//using Microsoft.Data.SqlClient;
 using Thinktecture;
 
 namespace CQRS.Data.Repository
@@ -24,12 +27,25 @@ namespace CQRS.Data.Repository
             //_context.Database.
             
         }
+        public IEnumerable<EmpSalary> GetEmpSalaries()
+        {
+            Microsoft.Data.SqlClient.SqlParameter sqlParameter = new Microsoft.Data.SqlClient.SqlParameter()
+            {
+                ParameterName= "@RowCount",
+                SqlDbType=System.Data.SqlDbType.Int,
+                Direction=System.Data.ParameterDirection.Output,
+                Value = 0
+            };
+            var list= _context.Set<EmpSalary>().FromSql($"EXEC USP_GetEmployee {sqlParameter} OUTPUT").ToList();
+            var rowCount = (int)sqlParameter.Value;
+            return list;
+        }
         public IQueryable<Order> GetOnlineOrders()
         {
             return _context.Orders;
                
         }
-        public IQueryable<Product> GetProduct()
+        public IQueryable<Models.Product> GetProduct()
         {
             var id = 1;
             var query=_context.Products
@@ -56,5 +72,10 @@ namespace CQRS.Data.Repository
             var queryString13 = query13.ToQueryString();
             return _context.Products;
         }
+
+        //IQueryable<Models.Product> IOnlineShopRepository.GetProduct()
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }

@@ -7,5 +7,6 @@ namespace CQRS.Data.Repository
         Task<IEnumerable<Order>> GetOrders();
         IQueryable<Order> GetOnlineOrders();
         IQueryable<Product> GetProduct();
+        IEnumerable<EmpSalary> GetEmpSalaries();
     }
 }

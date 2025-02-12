@@ -22,6 +22,7 @@ namespace CQRS.Data
             new Product() { Id = 2, Name = "Samsung Smart TV", Price = 1500 },
             new Product() { Id = 3, Name = "Nokia 130", Price = 1200 },
             new Product() { Id = 4, Name = "Nokia 450", Price = 12000 });
+            modelBuilder.Entity<EmpSalary>().HasKey(x=>x.id);
         }
 
         public DbSet<Product> Products { get; set; }

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.ObjectPool;
 using System.Data;
 using System.Data.Common;
+using System.Runtime.Versioning;
 using System.Text.Json;
 using System.Transactions;
 
@@ -44,6 +45,12 @@ namespace CQRS.Controllers
         //{
 
         //}
+        [HttpGet("get/emp/salary")]
+        public IEnumerable<EmpSalary> GetEmpSalaries()
+        {
+            var list=_onlineShopRepository.GetEmpSalaries();
+            return list;
+        }
         [HttpGet]
         public IEnumerable<string> Get()
         {
@@ -71,6 +78,21 @@ namespace CQRS.Controllers
             //_sampleCpntext.Database.ExecuteSql($"exec proc");//returns no of rows affected.
             //_sampleCpntext.Database.SqlQuery<string>($"exec proc");//returns scalar value
             //_sampleCpntext.City.FromSql($"exec proc");//returns entity
+
+            using (var transaction = _sampleCpntext.Database.BeginTransaction(System.Data.IsolationLevel.RepeatableRead))
+            {
+                try
+                {
+                    // Perform transactional operations here
+
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
             return "value";
         }
         [HttpGet("get/product-categories")]
@@ -148,6 +170,29 @@ namespace CQRS.Controllers
                 return 0;
             }            
         }
+        [HttpPost("add/product1")]
+        public async ValueTask<int> InsertProduct1(productNew product)
+        {
+            List<SqlParameter> parms = new List<SqlParameter>
+            { 
+                // Create parameters    
+                new SqlParameter { ParameterName = "@product_id", Value = product.product_id },
+                new SqlParameter { ParameterName = "@product_name", Value = product.product_name },
+                new SqlParameter { ParameterName = "@date_added", Value = product.date_added },
+                new SqlParameter { ParameterName = "@product_category_id", Value = product.product_category_id }
+            };
+            try
+            {
+                string sql = "exec USP_AddProduct @product_id,@product_name,@date_added,@product_category_id";
+                //return await _sampleCpntext.Database.ExecuteSqlRawAsync(sql, parms.ToArray());
+                //return await _sampleCpntext.Database.ExecuteSqlAsync($"exec USP_AddProduct {parms.ToArray()}");
+                return await _sampleCpntext.Database.ExecuteSqlAsync($"exec USP_AddProduct @product_id={product.product_id},@product_name={product.product_name},@date_added={product.date_added},@product_category_id={product.product_category_id}");
+            }
+            catch (Exception ex)
+            {
+                return 0;
+            }
+        }
         [HttpGet("get/products1")]
         public IQueryable<productNew> GetProducts1()
         {
@@ -195,7 +240,27 @@ namespace CQRS.Controllers
             //return await _sampleCpntext.productNews.FromSql($"exec USP_GetProductById {id}")
             //    .FirstOrDefaultAsync()??new productNew();
         }
+        //[HttpPost]
+        //public JsonResult GetFruitName(string id)
+        //{
+        //    string procedureName = "dbo.GetFruitName @FruitId, @FruitName OUT";
+        //    SqlParameter sqlParameter = new SqlParameter("@FruitId", id);
+        //    var sqlParameterOut = new SqlParameter
+        //    {
+        //        ParameterName = "@FruitName",
+        //        DbType = DbType.String,
+        //        Size = 30,
+        //        Direction = ParameterDirection.Output
+        //    };
+        //    var fruit = _sampleCpntext.Database.ExecuteSqlCommand(procedureName, sqlParameter, sqlParameterOut);
+        //    string name = Convert.ToString(sqlParameterOut.Value);
+
+        //    return Json(name);
+        //}
         // POST api/<OnlineShoppingController>
+        [SupportedOSPlatform("windows")]
+        //[SupportedOSPlatform("ios14.0")]
+        //[SupportedOSPlatform("linux")]
         [HttpPost]
         public IActionResult Post([FromBody] Contact value)
         {

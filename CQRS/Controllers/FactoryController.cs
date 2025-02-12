@@ -7,11 +7,15 @@ using CQRS.DesignPattern.Structural.Adapter;
 using CQRS.DesignPattern.Structural.Decorator;
 using CQRS.DesignPattern.Structural.Decorator.Live.FQCost;
 using CQRS.Filters;
+using CQRS.Models;
 using CQRS.OOPS;
+using CQRS.Resolution;
+using CQRS.Resolution.Generic;
 using CQRS.ServiceLife;
 using CQRS.Services;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -43,14 +47,24 @@ namespace CQRS.Controllers
         IUserService userService,
         Notifier notifier,
         IPriceService priceService,
-        ISingleton singleton
+        ISingleton singleton,
+        
+        Func<string, IService2> funcService2,
+        IGenericService<Service1> genericService,
+        [FromKeyedServices("service1")] IService service
 
 
         ) : ControllerBase
     {
         //readonly CreditCard _creditCard;
 
-
+        [HttpGet("eventViewer")]
+        public async Task<IActionResult> GetEventViewer(HttpRequestMessage req)
+        {
+            string jsonContent = await req.Content.ReadAsStringAsync();
+            var events = JsonConvert.DeserializeObject<GridEvent[]>(jsonContent);
+            return Ok(events);
+        }
         // GET: api/<FactoryController>
         [DisableCors]
         [HttpGet]
@@ -77,7 +91,9 @@ namespace CQRS.Controllers
 
             Brand brand = new OOPS.Version();
             brand.GetData("A");
-
+            genericService.DoWork();
+            funcService2("service22").DoWork();
+            service.DoWork();
             singleton.PrintDetails("milan");
             analyticsAdapter.ProcessEmployees(employeesService.GetEmployees());
             var house=houseBuilder.WithWindows(6)
@@ -86,8 +102,10 @@ namespace CQRS.Controllers
                 .Build();
             Console.WriteLine(platinum.GetCreditLimit());
             notificationFactory.CreateNotification("email").Send("milan","priya");
-            return new string[] { "value1", "value2", platinum.GetCreditLimit().ToString(), 
-                house.ToString(),foodDecorator.Description(),priceService.BasePrice().ToString() };
+            return new string[] { "value1", "value2", platinum.GetCreditLimit().ToString(),
+                house.ToString(),foodDecorator.Description(),priceService.BasePrice().ToString()
+                
+            };
         }
 
         // GET api/<FactoryController>/5

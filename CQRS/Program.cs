@@ -15,7 +15,10 @@ using CQRS.DesignPattern.Structural.Decorator.Notification;
 using CQRS.Features;
 using CQRS.Handler;
 using CQRS.Interceptor;
+using CQRS.Middleware;
 using CQRS.NotificationSystem;
+using CQRS.Resolution;
+using CQRS.Resolution.Generic;
 using CQRS.ServiceLife;
 using CQRS.Services;
 using MediatR;
@@ -31,7 +34,15 @@ using System.Text.Json.Serialization;
 using static CQRS.Services.SingletonService;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.RegisterDependencies();
+//First way
+builder.Services.AddKeyedTransient<IService, Service1>("service1");
+builder.Services.AddKeyedTransient<IService, Service2>("service2");
+//Second way
+builder.Services.AddTransient<Service1>();
+builder.Services.AddTransient<Service2>();
+builder.Services.AddTransient<IGenericService<Service1>, GenericService<Service1>>();
+builder.Services.AddTransient<IGenericService<Service2>, GenericService<Service2>>();
 // Add services to the container.
 builder.Services.AddTransient<ITransientService,TransientService>();
 builder.Services.AddTransient<ITransientService1, TransientService1>();
@@ -55,7 +66,8 @@ builder.Services.AddTransient<Notifier>();
 //builder.Services.AddScoped<IOnlineShopRepository, OnlineShopRepository>();
 builder.Services.AddDbContext<OnlineShopDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("PlayerConnection"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    
 });
 builder.Services.AddScoped<IOnlineShopRepository, OnlineShopRepository>();
 
@@ -104,6 +116,7 @@ builder.Services.AddSingleton<TranslationDatabase>();
 builder.Services.AddTransient<TranslationTransformer>();
 
 builder.Services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+builder.Services.AddSignalR();
 //builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
 builder.Services.AddMediatR(config =>
 {
@@ -249,11 +262,59 @@ app.UseHttpsRedirection();
 app.UseCors("AllowAllOrigins");
 app.UseAuthorization();
 app.UseSession();
+//app.UseSignalR(routes =>
+//{
+//    routes.MapHub<GridEventsHub>("/hubs/gridevents");
+//});
 //app.UseNCacheSession(); // store NCache session data    
 app.MapGraphQL();///graphql
 //app.MapGraphQL("/my/graphql/endpoint");
+
 app.MapDynamicControllerRoute<TranslationTransformer>("{language}/{controller}/{action}");
 app.MapControllers();
 //app.MapDynamicControllerRoute()
+app.Map("/default", () => "Hello World!");
+app.Map("/api/OnlineShopping1", mappedApp =>
+{
+    mappedApp.Use(async (context, next) =>
+    {
+        Console.WriteLine("Mapped middleware to /map");
+        await context.Response.WriteAsync("Hello from the /map path");
+        await next.Invoke(context);
+    });
+});
+app.UseMiddleware<MyMiddleware>();
 
+app.MapWhen(context => context.Request.Path.Value!.Contains("api1",StringComparison.OrdinalIgnoreCase), 
+    appBuilder =>
+{
+    appBuilder.UseMiddleware<MyMiddleware1>();
+});
+
+//app.MapWhen(context => context.Request.Path.StartsWithSegments("/api1"), appBuilder =>
+//{
+//    app.UseMiddleware<MyMiddleware1>();
+//});
+//app.MapWhen(context => context.Request.Method.ToUpper() == "GET", appBuilder =>
+//{
+//    appBuilder.UseMiddleware<MyMiddleware1>();
+//});
+
+app.UseMiddleware<MyMiddleware2>();
+
+app.UseMiddleware<CustomMiddleware>();
+
+app.UseWhen(context => context.Request.Path.Value!.Contains("wpi1"), appBuilder =>
+{
+    appBuilder.UseMiddleware<CustomMiddleware1>();
+});
+
+app.UseWhen(context => context.Request.Method.ToUpper().Contains("GET"),
+    appBuilder =>
+{
+    //Console.WriteLine(context.Request.Method);
+    app.UseMiddleware<CustomMiddleware1>();
+});
+
+app.UseMiddleware<CustomMiddleware2>();
 app.Run();
