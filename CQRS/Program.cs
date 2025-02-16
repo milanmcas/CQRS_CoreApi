@@ -13,6 +13,7 @@ using CQRS.DesignPattern.Structural.Decorator.Live;
 using CQRS.DesignPattern.Structural.Decorator.Live.FQCost;
 using CQRS.DesignPattern.Structural.Decorator.Notification;
 using CQRS.Features;
+using CQRS.Formatter;
 using CQRS.Handler;
 using CQRS.Interceptor;
 using CQRS.Middleware;
@@ -23,17 +24,43 @@ using CQRS.ServiceLife;
 using CQRS.Services;
 using MediatR;
 using MediatR.NotificationPublishers;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using ProtoBuf.Extended.Meta;
 using System;
+using System.Net;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using static CQRS.Services.SingletonService;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHsts(options =>
+{
+    options.Preload = true;
+    options.IncludeSubDomains = true;
+    options.MaxAge = TimeSpan.FromDays(60);
+
+    options.ExcludedHosts.Add("test.com");
+});
+builder.Services.AddHttpsRedirection(options =>
+{
+    //options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
+    //options.HttpsPort = 5001;
+    options.RedirectStatusCode = (int)HttpStatusCode.PermanentRedirect;//default 307(TemporaryRedirect)
+    options.HttpsPort = 443;
+});
+//builder.WebHost.ConfigureKestrel((context, serverOptions) =>
+//{
+//    serverOptions.Listen(IPAddress.Loopback, 5000);
+//    serverOptions.Listen(IPAddress.Loopback, 5001, listenOptions =>
+//    {
+//        listenOptions.UseHttps("testCert.pfx", "testPassword");
+//    });
+//});
 builder.Services.RegisterDependencies();
 //First way
 builder.Services.AddKeyedTransient<IService, Service1>("service1");
@@ -208,7 +235,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDistributedSqlServerCache(options =>
 {
-    options.ConnectionString = @"Data Source=DRPRIYATMAA;Initial Catalog=CQRS;User ID=milan;Password=milan;Trust Server Certificate=True;";
+    options.ConnectionString = @"Data Source=DRPRIYATMAA;Initial Catalog=CQRS;User ID=milan;Password=priya;Trust Server Certificate=True;";
     options.SchemaName = "dbo";
     options.TableName = "SQLSessions";
 });
@@ -233,7 +260,18 @@ builder.Services.AddApiVersioning(apiVerConfig =>
         //options.SubstituteApiVersionInUrl = true;
     }); 
 
-builder.Services.AddControllers().AddXmlSerializerFormatters()
+builder.Services.AddControllers(options =>
+{
+    //options.RespectBrowserAcceptHeader = true;
+    //options.ReturnHttpNotAcceptable = true;//ReturnHttpNotAcceptable = true; with this configuration, we won’t get the default configuration if the requested format type is not supported by the server.
+    options.FormatterMappings.SetMediaTypeMappingForFormat("txt", "text/plain");
+    options.OutputFormatters.Add(new CsvOutputFormatter());
+    options.Filters.Add(new ProducesAttribute("application/xml"));//default response format for entire application
+    
+    //options.Filters.Add(new ConsumesAttribute("application/json"));
+    //Content-Type:application/xml
+    //Accept:application/xml
+}).AddXmlSerializerFormatters()
     .AddXmlDataContractSerializerFormatters()
     .AddJsonOptions(x =>
    x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve); ;
@@ -257,7 +295,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseHsts(); // Add this line
 app.UseHttpsRedirection();
 app.UseCors("AllowAllOrigins");
 app.UseAuthorization();
@@ -285,7 +323,7 @@ app.Map("/api/OnlineShopping1", mappedApp =>
 });
 app.UseMiddleware<MyMiddleware>();
 
-app.MapWhen(context => context.Request.Path.Value!.Contains("api1",StringComparison.OrdinalIgnoreCase), 
+app.MapWhen(context => context.Request.Path.Value!.Contains("api/Factory1", StringComparison.OrdinalIgnoreCase), 
     appBuilder =>
 {
     appBuilder.UseMiddleware<MyMiddleware1>();
@@ -309,7 +347,7 @@ app.UseWhen(context => context.Request.Path.Value!.Contains("wpi1"), appBuilder 
     appBuilder.UseMiddleware<CustomMiddleware1>();
 });
 
-app.UseWhen(context => context.Request.Method.ToUpper().Contains("GET"),
+app.UseWhen(context => (context.Request.Method==HttpMethod.Get.Method),
     appBuilder =>
 {
     //Console.WriteLine(context.Request.Method);

@@ -65,6 +65,30 @@ namespace CQRS.Controllers
             var events = JsonConvert.DeserializeObject<GridEvent[]>(jsonContent);
             return Ok(events);
         }
+        [HttpGet("GetNegotiationFile")]
+        public IActionResult GetNegotiationFile()
+        {
+            List<string> add = new List<string>();
+            add.Add("susanta0");
+            add.Add("susanta1");
+            add.Add("susanta2");
+            add.Add("susanta3");
+
+            return Ok(add);
+        }
+        [Consumes("application/xml", "application/json", "text/plain")]
+        [Produces("application/xml", "application/json", "text/plain")]
+        [HttpGet("GetNegotiationFile1")]
+        public IActionResult GetNegotiationFile1()
+        {
+            List<string> add = new List<string>();
+            add.Add("susanta0");
+            add.Add("susanta1");
+            add.Add("susanta2");
+            add.Add("susanta3");
+
+            return Ok(add);
+        }
         // GET: api/<FactoryController>
         [DisableCors]
         [HttpGet]

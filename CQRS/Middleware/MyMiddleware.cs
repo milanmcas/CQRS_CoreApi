@@ -29,6 +29,7 @@
         public async Task Invoke(HttpContext context)
         {
             // code executed before the next middleware
+            await context.Response.WriteAsync("This is the get method111");
             Console.WriteLine("MyMiddleware1");
             await _next.Invoke(context); // call next middleware
 
