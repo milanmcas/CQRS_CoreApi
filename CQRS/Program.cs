@@ -17,6 +17,7 @@ using CQRS.Formatter;
 using CQRS.Handler;
 using CQRS.Interceptor;
 using CQRS.Middleware;
+using CQRS.Models;
 using CQRS.NotificationSystem;
 using CQRS.Resolution;
 using CQRS.Resolution.Generic;
@@ -38,6 +39,8 @@ using static CQRS.Services.SingletonService;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add memory cache service for rate limiting
+builder.Services.AddMemoryCache();
 builder.Services.AddHsts(options =>
 {
     options.Preload = true;
@@ -61,6 +64,7 @@ builder.Services.AddHttpsRedirection(options =>
 //        listenOptions.UseHttps("testCert.pfx", "testPassword");
 //    });
 //});
+
 builder.Services.RegisterDependencies();
 //First way
 builder.Services.AddKeyedTransient<IService, Service1>("service1");
@@ -102,7 +106,7 @@ builder.Services.AddScoped<SampleCpntext>();
 
 builder.Services.AddDbContext<SportsDbContext>(options => {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-    .AddInterceptors(new DemoDbCommandInterceptor());
+    .AddInterceptors(new DemoDbCommandInterceptor());    
 });
 builder.Services
     .AddGraphQLServer()
@@ -265,8 +269,9 @@ builder.Services.AddControllers(options =>
     //options.RespectBrowserAcceptHeader = true;
     //options.ReturnHttpNotAcceptable = true;//ReturnHttpNotAcceptable = true; with this configuration, we won’t get the default configuration if the requested format type is not supported by the server.
     options.FormatterMappings.SetMediaTypeMappingForFormat("txt", "text/plain");
+    //options.InputFormatters.Add();
     options.OutputFormatters.Add(new CsvOutputFormatter());
-    options.Filters.Add(new ProducesAttribute("application/xml"));//default response format for entire application
+    //options.Filters.Add(new ProducesAttribute("application/xml"));//default response format for entire application
     
     //options.Filters.Add(new ConsumesAttribute("application/json"));
     //Content-Type:application/xml
@@ -299,6 +304,13 @@ app.UseHsts(); // Add this line
 app.UseHttpsRedirection();
 app.UseCors("AllowAllOrigins");
 app.UseAuthorization();
+var rateLimitRule = new RateLimitRule
+{
+    Limit = 5,
+    Window = TimeSpan.FromSeconds(10)
+};
+
+app.UseMiddleware<RateLimitingMiddleware>(app.Services.GetRequiredService<IMemoryCache>(), rateLimitRule);
 app.UseSession();
 //app.UseSignalR(routes =>
 //{

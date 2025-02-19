@@ -1,5 +1,6 @@
 ﻿using CQRS.DesignPattern.Behavioral.Observer.Notification;
 using CQRS.DesignPattern.Builder;
+using CQRS.DesignPattern.DisposePattern;
 using CQRS.DesignPattern.Factory;
 using CQRS.DesignPattern.Prototype;
 using CQRS.DesignPattern.Singleton;
@@ -94,6 +95,7 @@ namespace CQRS.Controllers
         [HttpGet]
         public IEnumerable<string> Get()
         {
+            DisposePatternTest.MainMethod();
             notifier.Process("Hi product");
             userService.Name = "Milan";
             userService.Age = 32;
