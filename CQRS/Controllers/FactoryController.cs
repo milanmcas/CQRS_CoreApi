@@ -1,4 +1,6 @@
-﻿using CQRS.DesignPattern.Behavioral.Observer.Notification;
+﻿using Alachisoft.NCache.Licensing.DOM;
+using Alachisoft.NCache.Runtime.MapReduce;
+using CQRS.DesignPattern.Behavioral.Observer.Notification;
 using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.DisposePattern;
 using CQRS.DesignPattern.Factory;
@@ -12,11 +14,17 @@ using CQRS.Models;
 using CQRS.OOPS;
 using CQRS.Resolution;
 using CQRS.Resolution.Generic;
+using CQRS.Security;
 using CQRS.ServiceLife;
 using CQRS.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Runtime.InteropServices.JavaScript;
+using System.Text.Encodings.Web;
+using System.Text.Json.Nodes;
+
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -133,12 +141,77 @@ namespace CQRS.Controllers
                 
             };
         }
+        [HttpGet("category-brand")]
+        public IActionResult GetProductsByCategoryAndBrandViaHeaders([FromHeader] string category, [FromHeader] string brand)
+        {
+            return Ok(category + brand);
+        }
+        [HttpGet("commonModel")]
+        public IActionResult GetCoomonModel()
+        {
+            var aa=  Request.HttpContext.Request.Headers["city"];
+            var context = Request.HttpContext.Request.Headers.ToList();
+            return Ok();
+        }
+        [HttpPost("multiobjs")]
+        public IActionResult MultipleObjects(object[] data)
+        {
+            CommentModel emp = JsonConvert.DeserializeObject<CommentModel>(data[0].ToString()!)!;
+            CommentDetail cust = JsonConvert.DeserializeObject<CommentDetail>(data[1].ToString()!)!;
+            List<CommentModel> list = new List<CommentModel>()
+            {
+                new CommentModel(){Content="a"},
+                new CommentModel(){Content="b"},
+                new CommentModel(){Content="c"},
+                new CommentModel(){Content="d"}
+            };
+            var output = JsonConvert.SerializeObject(list);
+            return Ok(data);
+        }
+        [HttpPost("multiobjs1")]
+        public IActionResult MultipleObjects1(string data)
+        {            
+            var output = JsonConvert.DeserializeObject<List<CommentModel>>(data);
+            return Ok(data);
+        }
+        [HttpPost("multiobjs2")]
+        public IActionResult MultipleObjects2(object data)
+        {
+            var output = JsonConvert.DeserializeObject<List<CommentModel>>(data.ToString()!);
+            return Ok(data);
+        }
+        [HttpPost("multiobjs3")]
+        public IActionResult MultipleObjects3(dynamic data)
+        {
+            var output = JsonConvert.DeserializeObject<List<CommentModel>>(data.ToString()!);
+            return Ok(output);
+        }
+        [HttpPost("multiobjs4")]
+        public IActionResult MultipleObjects3(List<CommentModel> data)
+        {
+            //var output = JsonConvert.DeserializeObject<List<CommentModel>>(data.ToString()!);
+            return Ok(data);
+        }
+        //TypeError: Failed to execute 'fetch' on 'Window': Request with GET/HEAD method cannot have body.
+        [HttpGet("category")]
+        public IActionResult GetProductsByCategory([FromBody] Models.Product model)//wrong
+        {
+            return Ok(model);
+        }
 
         // GET api/<FactoryController>/5
+        //[Authorize(Policy = "BlockGet")]
+        //[EnableCors("VerbPolicy")]
+        [VerbAuthorizationFilter]
         [HttpGet("{id}")]
         public string Get(int id)
         {
-            return "value";
+            TestInheritance.MainMethod();
+            string title = "<script>Something Nasty</script>";
+            //Microsoft.Security.Application.AntiXssEncoder.HtmlEncode(title, true);
+            var abc = HtmlSanitizer.Sanitize(title);
+            abc = HtmlEncoder.Default.Encode(abc);
+            return "value,"+ abc;
         }
 
         // POST api/<FactoryController>

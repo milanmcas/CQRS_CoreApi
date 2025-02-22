@@ -1,3 +1,4 @@
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Web.SessionState;
 using Asp.Versioning;
 using CQRS.Data;
@@ -21,24 +22,43 @@ using CQRS.Models;
 using CQRS.NotificationSystem;
 using CQRS.Resolution;
 using CQRS.Resolution.Generic;
+using CQRS.Security.Models;
+using CQRS.Security;
 using CQRS.ServiceLife;
 using CQRS.Services;
+using FluentValidation;
 using MediatR;
 using MediatR.NotificationPublishers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using ProtoBuf.Extended.Meta;
+using StackExchange.Redis;
 using System;
+using System.Configuration;
 using System.Net;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using static CQRS.Services.SingletonService;
+using CQRS.Hubs;
+using Microsoft.AspNetCore.Mvc.Filters;
+//using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 209715;
+});
+
+builder.Services.Configure<KestrelServerOptions>(options =>
+{
+    options.Limits.MaxRequestBodySize = int.MaxValue;
+});
+builder.Services.AddDataProtection();
 // Add memory cache service for rate limiting
 builder.Services.AddMemoryCache();
 builder.Services.AddHsts(options =>
@@ -49,6 +69,20 @@ builder.Services.AddHsts(options =>
 
     options.ExcludedHosts.Add("test.com");
 });
+/*
+ 6RgfeSBru6_mYgbK_7ctpDwRQQc0wmdp
+var configurationOptions = new ConfigurationOptions
+{
+    EndPoints = { builder.Configuration.GetValue<string>(AppSettingsKeys.RedisConnectionString) },
+    SyncTimeout = Convert.ToInt32(builder.Configuration.GetValue<string>(AppSettingsKeys.SyncTimeout)),
+    ReconnectRetryPolicy = new ExponentialRetry(Convert.ToInt32(Configuration.GetValue<string>(AppSettingsKeys.reconnectTime))),
+    DefaultDatabase = Convert.ToInt32(Configuration.GetValue<string>(AppSettingsKeys.DefaultDatabase))
+};
+var redis = ConnectionMultiplexer.Connect(configurationOptions);
+builder.Services.AddDataProtection(item => item.ApplicationDiscriminator = Configuration.GetValue<string>(AppSettingsKeys.ApplicationName))
+                .PersistKeysToRedis(redis, builder.Configuration.GetValue<string>(AppSettingsKeys.ProtectionKey))
+                .SetApplicationName(builder.Configuration.GetValue<string>(AppSettingsKeys.ApplicationName));
+*/
 builder.Services.AddHttpsRedirection(options =>
 {
     //options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
@@ -108,6 +142,10 @@ builder.Services.AddDbContext<SportsDbContext>(options => {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
     .AddInterceptors(new DemoDbCommandInterceptor());    
 });
+
+builder.Services
+    .AddValidatorsFromAssemblyContaining<UserValidator>();
+
 builder.Services
     .AddGraphQLServer()
     .AddQueryType<Query>();
@@ -175,6 +213,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name:"AllowAllOrigins",configurePolicy: policy =>
     {
+        /*
         policy.AllowAnyOrigin()
         .AllowAnyHeader()//Access-Control-Allow-Header
         .AllowAnyMethod();//Access-Control-Allow-Method
@@ -186,13 +225,22 @@ builder.Services.AddCors(options =>
            policy.WithOrigins("http://example.com",
                                "http://www.contoso.com");
        });
-
+        options.AddPolicy("CORSPolicy", builder => builder.AllowAnyMethod().
+        AllowAnyHeader().AllowCredentials().SetIsOriginAllowed((hosts) => true));
         options.AddPolicy("AnotherPolicy",
             policy =>
             {
                 policy.WithOrigins("http://www.contoso.com")
                                     .AllowAnyHeader()
                                     .AllowAnyMethod();
+            });
+        */
+        options.AddPolicy(name:"VerbPolicy",
+            policy =>
+            {
+                policy.AllowAnyOrigin()
+                                    .AllowAnyHeader()
+                                    .WithMethods("POST", "OPTIONS");
             });
     });
 });
@@ -215,7 +263,7 @@ builder.Services.AddScoped<IAggregatorRequestServiceFactory, AggregatorRequestSe
 builder.Services.AddScoped<IRequestProcessor, RequestProcessor>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddControllers();
-
+builder.Services.AddScoped<IValidator<UserRegistrationRequest>, UserRegistrationValidator>();
 //builder.Services.AddKeyedScoped<CreditCard, MoneyBack>(Card.MoneyBack);
 //builder.Services.AddKeyedScoped<CreditCard, Titanium>(Card.Titanium);
 //builder.Services.AddKeyedScoped<CreditCard, Platinum>(Card.Platinum);
@@ -262,8 +310,27 @@ builder.Services.AddApiVersioning(apiVerConfig =>
         options.DefaultApiVersion = new ApiVersion(1,0);
         options.GroupNameFormat = "'v'VVV";
         //options.SubstituteApiVersionInUrl = true;
-    }); 
+    });
+//builder.Services.AddAuthorization(config =>
+//{
+//    config.AddPolicy("BlockGet", p => p.RequireAssertion(context =>
+//    {
+//        var filterContext = context.Resource as AuthorizationFilterContext;
+//        var httpMethod = filterContext.HttpContext.Request.Method;
+//        if (httpMethod == HttpMethod.Get.Method)
+//            return false;
+//        // add conditional authorization here
+//        return true;
+//    }));
 
+//    config.AddPolicy("Edit", p => p.RequireAssertion(context =>
+//    {
+//        var filterContext = context.Resource as AuthorizationFilterContext;
+//        var httpMethod = filterContext.HttpContext.Request.Method;
+//        // add conditional authorization here
+//        return true;
+//    }));
+//});
 builder.Services.AddControllers(options =>
 {
     //options.RespectBrowserAcceptHeader = true;
@@ -302,7 +369,10 @@ if (app.Environment.IsDevelopment())
 }
 app.UseHsts(); // Add this line
 app.UseHttpsRedirection();
-app.UseCors("AllowAllOrigins");
+
+app.UseRouting();
+//app.UseCors("CORSPolicy");
+app.UseCors("VerbPolicy");
 app.UseAuthorization();
 var rateLimitRule = new RateLimitRule
 {
@@ -320,10 +390,10 @@ app.UseSession();
 app.MapGraphQL();///graphql
 //app.MapGraphQL("/my/graphql/endpoint");
 
-app.MapDynamicControllerRoute<TranslationTransformer>("{language}/{controller}/{action}");
-app.MapControllers();
 //app.MapDynamicControllerRoute()
 app.Map("/default", () => "Hello World!");
+app.MapGet("/default1", () => "Hello default1 World!");
+app.MapPost("/default2", () => "Hello default2 World!");
 app.Map("/api/OnlineShopping1", mappedApp =>
 {
     mappedApp.Use(async (context, next) =>
@@ -332,6 +402,12 @@ app.Map("/api/OnlineShopping1", mappedApp =>
         await context.Response.WriteAsync("Hello from the /map path");
         await next.Invoke(context);
     });
+});
+app.MapPost("/api/OnlineShopping2", async(context) =>
+{
+    Console.WriteLine("Mapped OnlineShopping2 middleware to /map");
+    await context.Response.WriteAsync("Hello OnlineShopping2 from the /map path");
+    
 });
 app.UseMiddleware<MyMiddleware>();
 
@@ -354,17 +430,34 @@ app.UseMiddleware<MyMiddleware2>();
 
 app.UseMiddleware<CustomMiddleware>();
 
-app.UseWhen(context => context.Request.Path.Value!.Contains("wpi1"), appBuilder =>
+app.UseWhen(context => context.Request.Path.Value!.Contains("Factory"), appBuilder =>
 {
-    appBuilder.UseMiddleware<CustomMiddleware1>();
+    appBuilder.UseMiddleware<CustomMiddleware3>();
 });
 
-app.UseWhen(context => (context.Request.Method==HttpMethod.Get.Method),
+app.UseWhen(context => (context.Request.Method == HttpMethod.Get.Method),
     appBuilder =>
 {
     //Console.WriteLine(context.Request.Method);
     app.UseMiddleware<CustomMiddleware1>();
 });
+app.MapPost("/minimal/register", async (UserRegistrationRequest request, IValidator<UserRegistrationRequest> validator) =>
+{
+    var validationResult = await validator.ValidateAsync(request);
+    if (!validationResult.IsValid)
+    {
+        return Results.ValidationProblem(validationResult.ToDictionary());
+    }
+    // perform actual service call to register the user to the system
+    // _service.RegisterUser(request);
+    return Results.Accepted();
+});
 
 app.UseMiddleware<CustomMiddleware2>();
+app.UseEndpoints(endpoints => {
+    endpoints.MapControllers();
+    endpoints.MapHub<MessageHub>("/offers");
+});
+app.MapDynamicControllerRoute<TranslationTransformer>("{language}/{controller}/{action}");
+app.MapControllers();
 app.Run();
