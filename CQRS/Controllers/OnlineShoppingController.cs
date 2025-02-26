@@ -145,7 +145,7 @@ namespace CQRS.Controllers
             return prodModel;
         }
         [HttpPost("add/blog")]
-        public async Task<IActionResult> AddBlog(Blog blog)
+        public async Task<ActionResult<Blog>> AddBlog(Blog blog)
         {
             try
             {

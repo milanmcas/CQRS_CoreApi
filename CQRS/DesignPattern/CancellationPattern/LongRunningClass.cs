@@ -8,9 +8,9 @@
             {
                 // Periodically check if cancellation is requested
                 cancellationToken.ThrowIfCancellationRequested();
-
+                Console.WriteLine($"Working LongRunningOperationAsync... {i}");
                 // Simulate some work
-                await Task.Delay(100);
+                await Task.Delay(1000);
             }
         }
         void DoWork(CancellationToken token)
@@ -23,7 +23,22 @@
                     return;
                 }
                 // Simulate work
+                Console.WriteLine($"DoWork {i}");
                 Thread.Sleep(1000);
+            }
+        }
+        async Task DoWork1(CancellationToken token)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                if (token.IsCancellationRequested)
+                {
+                    Console.WriteLine("DoWork1 Cancellation requested.");
+                    break;
+                }
+                // Simulate work
+                Console.WriteLine($"DoWork1 {i}");
+                await Task.Delay(1000);
             }
         }
         static async Task LongRunningTaskAsync(CancellationToken token)
@@ -75,7 +90,12 @@
 
             try
             {
-                await LongRunningOperationAsync(cts.Token);
+                //await DoWork1(cts.Token);
+                //await LongRunningOperationAsync(cts.Token);
+                var task1= DoWork1(cts.Token);
+                var task2= LongRunningOperationAsync(cts.Token);
+                await Task.WhenAll(task1, task2);
+
             }
             catch (OperationCanceledException)
             {

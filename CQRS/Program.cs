@@ -331,6 +331,7 @@ builder.Services.AddApiVersioning(apiVerConfig =>
 //        return true;
 //    }));
 //});
+//builder.Services.AddStartupTask();
 builder.Services.AddControllers(options =>
 {
     //options.RespectBrowserAcceptHeader = true;
