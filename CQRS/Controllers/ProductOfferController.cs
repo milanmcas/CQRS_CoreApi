@@ -1,6 +1,8 @@
 ﻿using CQRS.DesignPattern.CancellationPattern;
 using CQRS.Extensions;
 using CQRS.Hubs;
+using CQRS.OOPS;
+using CQRS.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -17,6 +19,23 @@ namespace CQRS.Controllers
         {
             messageHub = _messageHub;
         }
+        [HttpGet("interface")]
+        public IEnumerable<IThing> GetInterface()
+        {
+            IThing thing = new Two();
+            thing.Print();
+            return IthingTest.MainMethod();
+        }
+        [HttpGet("interface1")]
+        public string GetInterface1()
+        {
+            return IthingTest.MainMethod1();
+        }
+        [HttpGet("abstract")]
+        public IEnumerable<ThingAbstract> GetAbstract()
+        {
+            return ThingAbstractTest.MainMethod();
+        }
         [HttpPost]
         [Route("productoffers")]
         public async ValueTask<string> Get()
@@ -26,9 +45,11 @@ namespace CQRS.Controllers
             offers.Add("15% Off on HP Pavillion");
             offers.Add("25% Off on Samsung Smart TV");
             await messageHub.Clients.All.SendOffersToUser(offers);
+            
             ExtensionTest.MainMethod();
+            StaticDIClass.Print();
             await TestCancellationTask.MainMethod();
-            return "Offers sent successfully to all users!";
+            return $"Offers sent successfully to all users! {IthingTest.MainMethod()} {ThingAbstractTest.MainMethod()}";
         }
         [HttpPost]
         [Route("offers")]

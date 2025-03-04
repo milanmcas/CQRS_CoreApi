@@ -28,7 +28,10 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         //https://www.csharptutorial.net/entity-framework-core-tutorial/ef-core-log-sql-query/#:~:text=To%20log%20information%20generated%20by%20EF%20Core%20to,class%20like%20this%3A%20DbContextOptionsBuilder%20optionsBuilder%20optionsBuilder%20.UseSqlServer%28connectionString%29%20.LogTo%28target%29
         //base.OnConfiguring(optionsBuilder);
-        optionsBuilder.UseSqlServer("Data Source=DRPRIYATMAA;Initial Catalog=CQRS;User ID=milan;Password=milan;Trust Server Certificate=True;")
+        //optionsBuilder.UseSqlServer("Data Source=DRPRIYATMAA;Initial Catalog=CQRS;User ID=milan;Password=priya;Encrypt=True;Trust Server Certificate=True;")
+        //    .LogTo(Console.WriteLine)
+        //    .EnableSensitiveDataLogging();
+        optionsBuilder.UseSqlServer("Data Source=DRPRIYATMAA;Initial Catalog=CQRS;User ID=milan;Password=priya;Encrypt=Yes;TrustServerCertificate=Yes;")
             .LogTo(Console.WriteLine)
             .EnableSensitiveDataLogging();
     }

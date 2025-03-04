@@ -32,8 +32,16 @@ namespace CQRS.Services
         {
             //IQueryable<Player> query = _context.Players.Take(2);
             //IEnumerable<Player> activeEntities = query.ToList();
-            return await _context.Players
+            try
+            {
+                return await _context.Players
                 .ToListAsync();
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+            
         }
         //Paging and filtering
         public async Task<IEnumerable<Player>> GetPlayersByPage(int pageIndex, int pageSize)

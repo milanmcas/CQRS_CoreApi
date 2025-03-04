@@ -45,6 +45,7 @@ using System.Text.Json.Serialization;
 using static CQRS.Services.SingletonService;
 using CQRS.Hubs;
 using Microsoft.AspNetCore.Mvc.Filters;
+using CQRS.OOPS;
 //using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -118,10 +119,12 @@ builder.Services.AddScoped<IScopedService2, ScopedService2>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddTransient<IMasterUser,MasterUser>();
 builder.Services.AddSingleton<ISingletonService, SingletonService>();
+
 builder.Services.AddSingleton<ISingleton>(options =>
 {
     return Singleton.GetInstance();
 });
+
 builder.Services.AddSingleton<ISingletonService1, SingletonService1>();
 //builder.Services.AddTransient<INotifierService,NotifierService>();
 builder.Services.AddTransient<INotifierService, NotifierDelegateService>();
@@ -184,7 +187,7 @@ builder.Services.AddScoped<IFootballService, FootballService>();
 builder.Services.AddSingleton<TranslationDatabase>();
 builder.Services.AddTransient<TranslationTransformer>();
 
-builder.Services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+//builder.Services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 builder.Services.AddSignalR();
 //builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
 builder.Services.AddMediatR(config =>
@@ -235,14 +238,15 @@ builder.Services.AddCors(options =>
                                     .AllowAnyMethod();
             });
         */
-        options.AddPolicy(name:"VerbPolicy",
+        
+    });
+    options.AddPolicy(name: "VerbPolicy",
             policy =>
             {
                 policy.AllowAnyOrigin()
                                     .AllowAnyHeader()
-                                    .WithMethods("POST", "OPTIONS");
+                                    .WithMethods("POST", "GET", "OPTIONS");
             });
-    });
 });
 
 builder.Services.AddScoped<INotificationFactory,NotificationFactory>();
@@ -362,6 +366,7 @@ builder.Services.AddControllers(options =>
 
 var app = builder.Build();
 app.UseExceptionHandler("/error");
+StaticDIClass.Initialize(app.Services.GetRequiredService<ISingletonService1>(), app.Services.GetRequiredService<IGenericService<Service1>>());//correct
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -370,14 +375,23 @@ if (app.Environment.IsDevelopment())
 }
 app.UseHsts(); // Add this line
 app.UseHttpsRedirection();
-
+//app.MapWhen(context => context.Request.Path.Value!.StartsWith("/api/Factory/country", StringComparison.OrdinalIgnoreCase),
+//    appBuilder =>
+//    {
+//        appBuilder.UseMiddleware<MyMiddleware1>();
+//    });
+//app.UseWhen(context => context.Request.Path.Value!.StartsWith("/api/Factory/country", StringComparison.OrdinalIgnoreCase),
+//    appBuilder =>
+//    {
+//        appBuilder.UseMiddleware<MyMiddleware1>();
+//    });
 app.UseRouting();
 //app.UseCors("CORSPolicy");
 app.UseCors("VerbPolicy");
 app.UseAuthorization();
 var rateLimitRule = new RateLimitRule
 {
-    Limit = 5,
+    Limit = 115,
     Window = TimeSpan.FromSeconds(10)
 };
 
@@ -395,6 +409,12 @@ app.MapGraphQL();///graphql
 app.Map("/default", () => "Hello World!");
 app.MapGet("/default1", () => "Hello default1 World!");
 app.MapPost("/default2", () => "Hello default2 World!");
+app.MapPost("/OnlineShopping3", async (context) =>
+{
+    Console.WriteLine("Mapped OnlineShopping3 middleware to /map");
+    await context.Response.WriteAsync("Hello OnlineShopping3 from the /map path");
+
+});
 app.Map("/api/OnlineShopping1", mappedApp =>
 {
     mappedApp.Use(async (context, next) =>
@@ -412,13 +432,14 @@ app.MapPost("/api/OnlineShopping2", async(context) =>
 });
 app.UseMiddleware<MyMiddleware>();
 
-app.MapWhen(context => context.Request.Path.Value!.Contains("api/Factory1", StringComparison.OrdinalIgnoreCase), 
+
+app.MapWhen(context => context.Request.Path.Value!.Contains("api/Factory/country", StringComparison.OrdinalIgnoreCase),
     appBuilder =>
 {
     appBuilder.UseMiddleware<MyMiddleware1>();
 });
 
-//app.MapWhen(context => context.Request.Path.StartsWithSegments("/api1"), appBuilder =>
+//app.MapWhen(context => context.Request.Path.StartsWithSegments("/aaFactory111"), appBuilder =>
 //{
 //    app.UseMiddleware<MyMiddleware1>();
 //});
@@ -436,12 +457,12 @@ app.UseWhen(context => context.Request.Path.Value!.Contains("Factory"), appBuild
     appBuilder.UseMiddleware<CustomMiddleware3>();
 });
 
-app.UseWhen(context => (context.Request.Method == HttpMethod.Get.Method),
-    appBuilder =>
-{
-    //Console.WriteLine(context.Request.Method);
-    app.UseMiddleware<CustomMiddleware1>();
-});
+//app.UseWhen(context => (context.Request.Method == HttpMethod.Get.Method),
+//    appBuilder =>
+//{
+//    //Console.WriteLine(context.Request.Method);
+//    app.UseMiddleware<CustomMiddleware1>();
+//});
 app.MapPost("/minimal/register", async (UserRegistrationRequest request, IValidator<UserRegistrationRequest> validator) =>
 {
     var validationResult = await validator.ValidateAsync(request);
@@ -461,4 +482,5 @@ app.UseEndpoints(endpoints => {
 });
 app.MapDynamicControllerRoute<TranslationTransformer>("{language}/{controller}/{action}");
 app.MapControllers();
+app.UseMiddleware<CustomMiddleware33>();
 app.Run();

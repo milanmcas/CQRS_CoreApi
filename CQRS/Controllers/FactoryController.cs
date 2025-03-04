@@ -31,7 +31,7 @@ using System.Text.Json.Nodes;
 namespace CQRS.Controllers
 {
     //[ClientIpCheckActionFilter]
-    [EnableCors("MyPolicy")]
+    //[EnableCors("MyPolicy")]
     [Route("api/[controller]")]
     [ApiController]
     public class FactoryController([FromKeyedServices("Platinum")] CreditCard platinum,
@@ -66,7 +66,13 @@ namespace CQRS.Controllers
         ) : ControllerBase
     {
         //readonly CreditCard _creditCard;
-
+        [HttpGet("country")]
+        public ActionResult<IEnumerable<CountryName>> GetCompanies(string s)
+        {
+            var list = CountryName.countryNames.Where(x => x.Name.StartsWith(s)).ToList();
+            return Ok(list);
+            //return Ok(CountryName.countryNames.Where(x => x.Name.Contains(s)));
+        }
         [HttpGet("eventViewer")]
         public async Task<IActionResult> GetEventViewer(HttpRequestMessage req)
         {

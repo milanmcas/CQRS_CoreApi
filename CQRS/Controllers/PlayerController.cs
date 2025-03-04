@@ -25,14 +25,14 @@ namespace CQRS.Controllers
             _playerService = playerService;
             _publisher = publisher;
         }
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status404NotFound)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpGet]
         public async Task<IEnumerable<Player>> GetPlayers()
         {
-            HttpContext.Session.SetInt32("UserId", 123456);
-            HttpContext.Session.SetString("UserName", "info@dotnettutorials.net");
+            //HttpContext.Session.SetInt32("UserId", 123456);
+            //HttpContext.Session.SetString("UserName", "info@dotnettutorials.net");
             
             return await _mediator.Send(new GetAllPlayersQuery());
         }
