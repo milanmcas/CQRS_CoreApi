@@ -19,12 +19,10 @@ namespace CQRS.DesignPattern.Behavioral.Observer.Notification
         {
             _subscribers.Add(subscriber);
         }
-
         void INotifierService.Detach(IMessageNotificationService subscriber)
         {
             _subscribers.Remove(subscriber);
         }
-
         void INotifierService.Notify(string message)
         {
             foreach (var subscriber in _subscribers)
@@ -38,8 +36,6 @@ namespace CQRS.DesignPattern.Behavioral.Observer.Notification
         private readonly INotifierService _subject;
         private readonly ObserverFactory _notificationFactory;
         List<NotificationTypes> _observerList;
-
-
         public Notifier(INotifierService subject, ObserverFactory notificationFactory)
         {
             _subject = subject;
@@ -54,12 +50,10 @@ namespace CQRS.DesignPattern.Behavioral.Observer.Notification
                 {
                 IMessageNotificationService nobject = _notificationFactory.CreateNotification(notificationType);
                     _subject.Attach(nobject);
-                }
-            
+                }           
 
             SendNotification(message);
         }
-
         public void SendNotification(string message)
         {
             // Send notification logic...

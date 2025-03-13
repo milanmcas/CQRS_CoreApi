@@ -1,5 +1,6 @@
 ﻿using Alachisoft.NCache.Licensing.DOM;
 using Alachisoft.NCache.Runtime.MapReduce;
+using CQRS.CircuitBreaker;
 using CQRS.DesignPattern.Behavioral.Observer.Notification;
 using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.DisposePattern;
@@ -57,7 +58,7 @@ namespace CQRS.Controllers
         Notifier notifier,
         IPriceService priceService,
         ISingleton singleton,
-        
+        IExternalService externalService,
         Func<string, IService2> funcService2,
         IGenericService<Service1> genericService,
         [FromKeyedServices("service1")] IService service
@@ -65,10 +66,16 @@ namespace CQRS.Controllers
 
         ) : ControllerBase
     {
+        [HttpGet("circuitbreaker")]
+        public async Task<ActionResult<string>> getdata()
+        {
+             return await externalService.GetDataAsync();
+        }
         //readonly CreditCard _creditCard;
         [HttpGet("country")]
         public ActionResult<IEnumerable<CountryName>> GetCompanies(string s)
         {
+            
             var list = CountryName.countryNames.Where(x => x.Name.StartsWith(s)).ToList();
             return Ok(list);
             //return Ok(CountryName.countryNames.Where(x => x.Name.Contains(s)));
@@ -76,7 +83,7 @@ namespace CQRS.Controllers
         [HttpGet("eventViewer")]
         public async Task<IActionResult> GetEventViewer(HttpRequestMessage req)
         {
-            string jsonContent = await req.Content.ReadAsStringAsync();
+            string jsonContent = await req?.Content?.ReadAsStringAsync()!;
             var events = JsonConvert.DeserializeObject<GridEvent[]>(jsonContent);
             return Ok(events);
         }

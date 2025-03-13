@@ -46,9 +46,12 @@ using static CQRS.Services.SingletonService;
 using CQRS.Hubs;
 using Microsoft.AspNetCore.Mvc.Filters;
 using CQRS.OOPS;
+using CQRS.CircuitBreaker;
+using Polly;
+using System.Text;
 //using FluentValidation;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);//creates WebApplicationBuilder class object
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
@@ -119,6 +122,76 @@ builder.Services.AddScoped<IScopedService2, ScopedService2>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddTransient<IMasterUser,MasterUser>();
 builder.Services.AddSingleton<ISingletonService, SingletonService>();
+
+//Timeout: Setting a Time Limit for an Operation
+
+//A timeout policy sets a time limit for an operation to complete.
+//If the operation doesn’t finish within the specified time,
+//it is considered failed.
+//This is useful in scenarios where an operation is taking too long and needs
+//to be terminated to free up resources.
+var timeoutPolicy = Policy.TimeoutAsync(5);
+
+
+//Retry: Automatically Retrying a Failed Operation
+
+//A retry policy is designed to automatically retry a failed operation a specified number of times.
+//This is particularly useful when dealing with transient faults such as temporary network
+//issues, where a subsequent attempt might succeed.
+var retryPolicy = Policy
+        .Handle<Exception>()
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(2));
+
+//Circuit Breaker: Stopping Requests to a Failing Service
+//A circuit breaker policy helps prevent overwhelming a failing service
+//by temporarily stopping requests after a certain number of failures.
+//Once the circuit breaker is “tripped,”
+//further attempts are blocked for a specified duration.
+var circuitBreakerPolicy = Policy
+            //.Handle<HttpRequestException>()
+            .Handle<Exception>()
+            .CircuitBreakerAsync(
+                exceptionsAllowedBeforeBreaking: 2,
+                durationOfBreak: TimeSpan.FromMinutes(1),
+                onBreak: (exception, timespan) =>
+                {
+                    Console.WriteLine($"Circuit broken due to: {exception.Message}");
+                },
+                onReset: () => Console.WriteLine("Circuit closed."),
+                onHalfOpen: () => Console.WriteLine("Circuit in half-open state.")
+            );
+
+//Fallback: Providing an Alternative Response
+//A fallback policy provides an alternative response when an operation fails.
+//This ensures that the application can still respond,
+//even if the primary operation encounters issues.
+
+//var fallbackPolicy = Policy<HttpResponseMessage>
+//        .Handle<Exception>()
+//        .FallbackAsync(new HttpResponseMessage(HttpStatusCode.OK)
+//        {
+//            Content = new StringContent("{\"message\": \"Weather data currently unavailable\"}", Encoding.UTF8, "application/json")
+//        });
+
+var fallbackPolicy = Policy<Result<string>>
+       .Handle<Exception>()
+       .FallbackAsync(new Result<string>("Fallback data: Inventory data unavailable"));
+builder.Services.AddSingleton<IAsyncPolicy<Result<string>>>(fallbackPolicy);
+
+var fallbackPolicy1 = Policy
+       .Handle<Exception>()
+       .FallbackAsync((abc) =>  Task.Run(() => { return "Fallback data: Inventory data unavailable"; }));
+//Combining Policies for Better Fault Handling
+var combinedPolicy = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy, timeoutPolicy, fallbackPolicy1);
+builder.Services.AddSingleton<IAsyncPolicy>(combinedPolicy);
+builder.Services.AddTransient<ExternalService>();
+//builder.Services.AddSingleton<IAsyncPolicy>(circuitBreakerPolicy);
+builder.Services.AddTransient<IExternalService>(serviceprovider =>
+{
+    var service = serviceprovider.GetService<ExternalService>();
+    var policy = serviceprovider.GetService<IAsyncPolicy>();
+    return new ResilientService(service!, policy!);
+});
 
 builder.Services.AddSingleton<ISingleton>(options =>
 {
@@ -364,7 +437,7 @@ builder.Services.AddControllers(options =>
 //    options.SessionOptions.CookieName = "AspNetCore.Session";
 //});
 
-var app = builder.Build();
+var app = builder.Build();//creates WebApplication class instance
 app.UseExceptionHandler("/error");
 StaticDIClass.Initialize(app.Services.GetRequiredService<ISingletonService1>(), app.Services.GetRequiredService<IGenericService<Service1>>());//correct
 // Configure the HTTP request pipeline.
