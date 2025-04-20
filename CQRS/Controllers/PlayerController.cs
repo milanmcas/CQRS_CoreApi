@@ -85,7 +85,7 @@ namespace CQRS.Controllers
                     var player=await _mediator.Send(cmd);
                     
                     await this._publisher.Publish
-                        (new PlayerCreatedEvent(player.Id, player.Name));
+                        (new PlayerCreatedEvent(player.Id, player.Name!));
                     return Ok(player);
                     //return await _mediator.Send(cmd);
                     //return RedirectToAction(nameof(Index));

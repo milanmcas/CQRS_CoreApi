@@ -7,6 +7,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Caching.Distributed;
 using CQRS.Extensions;
 using Polly;
+using Hangfire;
 
 namespace CQRS.Services
 {
@@ -95,10 +96,18 @@ namespace CQRS.Services
         {
             _context.Players.Add(player);
             await _context.SaveChangesAsync();
-            var cacheKey = "players";
+            //var cacheKey = "players";
             //logger.LogInformation("invalidating cache for key: {CacheKey} from cache.", cacheKey);
-            _cache.Remove(cacheKey);
+            //_cache.Remove(cacheKey);
+            BackgroundJob.Enqueue(() => RefreshCache());
             return player;
+        }
+        public async Task RefreshCache()
+        {
+            var cacheKey = "players";
+            _cache.Remove(cacheKey);
+            var cachedList = await _context.Set<Player>().ToListAsync();
+            await _cache.SetAsync(cacheKey, cachedList);
         }
         public async Task<List<Player>> CreatePlayers(List<Player> players)
         {

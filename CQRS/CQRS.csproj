@@ -26,6 +26,8 @@
     <PackageReference Include="EntityFrameworkCore.NCache" Version="5.3.4" />
     <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    <PackageReference Include="Hangfire" Version="1.8.18" />
+    <PackageReference Include="Hangfire.Core" Version="1.8.18" />
     <PackageReference Include="HotChocolate.AspNetCore" Version="14.1.0" />
     <PackageReference Include="Marten.AspNetCore" Version="7.38.1" />
     <PackageReference Include="MediatR" Version="12.4.1" />

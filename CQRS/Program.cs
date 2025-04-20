@@ -49,6 +49,7 @@ using CQRS.OOPS;
 using CQRS.CircuitBreaker;
 using Polly;
 using System.Text;
+using Hangfire;
 //using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);//creates WebApplicationBuilder class object
@@ -435,6 +436,8 @@ builder.Services.AddStackExchangeRedisCache(options =>
         EndPoints = { options.Configuration }
     };
 });
+builder.Services.AddHangfire(x => x.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHangfireServer();
 builder.Services.AddControllers(options =>
 {
     //options.RespectBrowserAcceptHeader = true;
@@ -546,7 +549,7 @@ app.MapWhen(context => context.Request.Path.Value!.Contains("api/Factory/country
 //{
 //    appBuilder.UseMiddleware<MyMiddleware1>();
 //});
-
+app.UseHangfireDashboard("/jobs");
 app.UseMiddleware<MyMiddleware2>();
 
 app.UseMiddleware<CustomMiddleware>();
