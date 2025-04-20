@@ -1,5 +1,6 @@
 ﻿using CQRS.Features.Players.Commands;
 using CQRS.Features.Players.Queries;
+using CQRS.Filters;
 using CQRS.Models;
 using CQRS.NotificationSystem;
 using CQRS.Services;
@@ -73,7 +74,8 @@ namespace CQRS.Controllers
             return player;
         }
         [HttpPost]
-        public async Task<Player> Create(CreatePlayerCommand cmd)
+        //[Idempotent(cacheTimeInMinutes: 60)]
+        public async Task<ActionResult<Player>> Create(CreatePlayerCommand cmd)
         {
             //var partitioner=new Partitioner(cmd);
             try
@@ -84,15 +86,15 @@ namespace CQRS.Controllers
                     
                     await this._publisher.Publish
                         (new PlayerCreatedEvent(player.Id, player.Name));
-                    return player;
+                    return Ok(player);
                     //return await _mediator.Send(cmd);
                     //return RedirectToAction(nameof(Index));
                 }
-                return new Player();
+                return  BadRequest(new Player());
             }
             catch (Exception ex) {
                 ModelState.AddModelError("", "Unable to save changes."+ex.ToString());
-                return new Player();
+                return BadRequest(new Player());
             }
         }
         [HttpPost("bulk")]

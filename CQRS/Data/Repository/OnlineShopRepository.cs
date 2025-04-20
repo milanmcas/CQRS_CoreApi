@@ -27,6 +27,17 @@ namespace CQRS.Data.Repository
             //_context.Database.
             
         }
+        public async Task<IQueryable<Order>> GetOrders1()
+        {
+            //_context.Orders.OrderByDescending(x => x.OrderDate).Select(x => new
+            //{
+            //    rowNo = EF.Functions.RowNumber(x.OrderDate) 
+            //});
+            return _context.Orders;
+            //_context.Database.ExecuteSql()
+            //_context.Database.
+
+        }
         public IEnumerable<EmpSalary> GetEmpSalaries()
         {
             Microsoft.Data.SqlClient.SqlParameter sqlParameter = new Microsoft.Data.SqlClient.SqlParameter()

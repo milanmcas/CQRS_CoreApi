@@ -50,7 +50,7 @@
             // code executed before the next middleware
             Console.WriteLine("MyMiddleware2");
             await _next.Invoke(context); // call next middleware
-
+            //await context.Response.WriteAsync("Getting Response from First Middleware");
             // code executed after the next middleware
 
         }

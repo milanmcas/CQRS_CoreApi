@@ -69,6 +69,8 @@ namespace CQRS.Controllers
         [HttpGet("circuitbreaker")]
         public async Task<ActionResult<string>> getdata()
         {
+            //IExternalService externalService1 = new ExternalService();
+            //await externalService1.GetDataAsync();
              return await externalService.GetDataAsync();
         }
         //readonly CreditCard _creditCard;

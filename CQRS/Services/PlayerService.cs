@@ -4,16 +4,20 @@ using Microsoft.EntityFrameworkCore;
 using System.Data;
 
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Caching.Distributed;
+using CQRS.Extensions;
+using Polly;
 
 namespace CQRS.Services
 {
     public class PlayerService:IPlayerService
     {
         private readonly PlayerDbContext _context;
-
-        public PlayerService(PlayerDbContext context)
+        private readonly IDistributedCache _cache;
+        public PlayerService(PlayerDbContext context, IDistributedCache cache)
         {
             _context = context;
+            _cache = cache;
         }
         public IQueryable<Student> GetStudents()
         {
@@ -34,8 +38,22 @@ namespace CQRS.Services
             //IEnumerable<Player> activeEntities = query.ToList();
             try
             {
-                return await _context.Players
-                .ToListAsync();
+                //return await _context.Players
+                //.ToListAsync();
+                var cacheKey = "players";
+                //logger.LogInformation("fetching data for key: {CacheKey} from cache.", cacheKey);
+                var cacheOptions = new DistributedCacheEntryOptions()
+                        .SetAbsoluteExpiration(TimeSpan.FromMinutes(20))
+                        .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+                var players = await _cache.GetOrSetAsync(
+                    cacheKey,
+                    async () =>
+                    {
+                        //logger.LogInformation("cache miss. fetching data for key: {CacheKey} from database.", cacheKey);
+                        return await  _context.Players.ToListAsync();
+                    },
+                    cacheOptions)!;
+                return players!;
             }
             catch(Exception ex)
             {
@@ -60,14 +78,26 @@ namespace CQRS.Services
 
         public async Task<Player> GetPlayerById(int id)
         {
-            return await _context.Players
-                .FirstOrDefaultAsync(x => x.Id == id);
+            //return await _context.Players
+            //    .FirstOrDefaultAsync(x => x.Id == id)??new Player();
+            var cacheKey = $"player:{id}";
+            //logger.LogInformation("fetching data for key: {CacheKey} from cache.", cacheKey);
+            var player = await _cache.GetOrSetAsync(cacheKey,
+                async () =>
+                {
+                    //logger.LogInformation("cache miss. fetching data for key: {CacheKey} from database.", cacheKey);
+                    return await _context.Players.FirstOrDefaultAsync(x => x.Id == id)!;
+                })!;
+            return player!;
         }
 
         public async Task<Player> CreatePlayer(Player player)
         {
             _context.Players.Add(player);
             await _context.SaveChangesAsync();
+            var cacheKey = "players";
+            //logger.LogInformation("invalidating cache for key: {CacheKey} from cache.", cacheKey);
+            _cache.Remove(cacheKey);
             return player;
         }
         public async Task<List<Player>> CreatePlayers(List<Player> players)
@@ -75,6 +105,10 @@ namespace CQRS.Services
             _context.Players.AddRange(players);
             //_context.Database.ExecuteSql();
             await _context.SaveChangesAsync();
+            // invalidate cache for products, as new product is added
+            var cacheKey = "players";
+            //logger.LogInformation("invalidating cache for key: {CacheKey} from cache.", cacheKey);
+            _cache.Remove(cacheKey);
             return players;
         }
         public async Task<List<Player>> CreateBulkTablePlayers(List<Player> players)

@@ -40,7 +40,7 @@ namespace CQRS.Security
             // Remove plain http and https links
             var plainLinkRegex = new Regex(@"(http|https):\/\/[^\s<>]+", RegexOptions.IgnoreCase);
             input = plainLinkRegex.Replace(input, string.Empty);
-
+            //HtmlEncoder.Default.Encode(input);
             // Encode any remaining HTML
             return HttpUtility.HtmlEncode(input);
         }

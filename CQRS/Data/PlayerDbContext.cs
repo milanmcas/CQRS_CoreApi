@@ -10,12 +10,13 @@ public partial class PlayerDbContext : DbContext
 {
     public PlayerDbContext()
     {
-        
+        ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
     }
 
     public PlayerDbContext(DbContextOptions<PlayerDbContext> options)
         : base(options)
     {
+        ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
     }
 
     public virtual DbSet<Player> Players { get; set; }

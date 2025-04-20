@@ -151,7 +151,7 @@ var circuitBreakerPolicy = Policy
             //.Handle<HttpRequestException>()
             .Handle<Exception>()
             .CircuitBreakerAsync(
-                exceptionsAllowedBeforeBreaking: 2,
+                exceptionsAllowedBeforeBreaking: 4,
                 durationOfBreak: TimeSpan.FromMinutes(1),
                 onBreak: (exception, timespan) =>
                 {
@@ -183,9 +183,26 @@ var fallbackPolicy1 = Policy
        .FallbackAsync((abc) =>  Task.Run(() => { return "Fallback data: Inventory data unavailable"; }));
 //Combining Policies for Better Fault Handling
 var combinedPolicy = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy, timeoutPolicy, fallbackPolicy1);
-builder.Services.AddSingleton<IAsyncPolicy>(combinedPolicy);
+//builder.Services.AddSingleton<IAsyncPolicy>(combinedPolicy);
+builder.Services.Configure<CacheConfiguration>(builder.Configuration.GetSection("CacheConfiguration"));
+//For In-Memory Caching
+builder.Services.AddMemoryCache();
+builder.Services.AddTransient<MemoryCacheService>();
+builder.Services.AddTransient<RedisCacheService>();
+builder.Services.AddTransient<Func<CacheTech, ICacheService>>(serviceProvider => key =>
+{
+    switch (key)
+    {
+        case CacheTech.Memory:
+            return serviceProvider.GetService<MemoryCacheService>()!;
+        case CacheTech.Redis:
+            return serviceProvider.GetService<RedisCacheService>()!;
+        default:
+            return serviceProvider.GetService<MemoryCacheService>()!;
+    }
+});
 builder.Services.AddTransient<ExternalService>();
-//builder.Services.AddSingleton<IAsyncPolicy>(circuitBreakerPolicy);
+builder.Services.AddSingleton<IAsyncPolicy>(circuitBreakerPolicy);
 builder.Services.AddTransient<IExternalService>(serviceprovider =>
 {
     var service = serviceprovider.GetService<ExternalService>();
@@ -228,7 +245,7 @@ builder.Services
 builder.Services.AddScoped<Food, Sandwich>();
 builder.Services.AddScoped<FoodDecorator>(options => {
     var _food = options.GetService<Food>();
-    return new CheeseDecorator(_food);
+    return new CheeseDecorator(_food!);
 });
 builder.Services.AddSingleton<CQRS.DesignPattern.Structural.Decorator.Notification.INotification,CQRS.DesignPattern.Structural.Decorator.Notification.EmailNotification>();
 builder.Services.AddScoped(serviceProvider =>
@@ -238,7 +255,7 @@ builder.Services.AddScoped(serviceProvider =>
 
     //var playerService = serviceProvider.GetRequiredService<PlayersService>();
 
-    NotificationDecorator smsDecorator = new SMSNotification(notificationService);
+    NotificationDecorator smsDecorator = new SMSNotification(notificationService!);
     NotificationDecorator tpaDecorator = new ThirdpartyAPINotification(smsDecorator);
 
     return tpaDecorator;
@@ -364,7 +381,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDistributedSqlServerCache(options =>
 {
-    options.ConnectionString = @"Data Source=DRPRIYATMAA;Initial Catalog=CQRS;User ID=milan;Password=priya;Trust Server Certificate=True;";
+    options.ConnectionString = @"Data Source=DRPRIYATMAA;Initial Catalog=CQRS;User ID=milan;Password=priya;Encrypt=True;Trust Server Certificate=True;";
     options.SchemaName = "dbo";
     options.TableName = "SQLSessions";
 });
@@ -409,6 +426,15 @@ builder.Services.AddApiVersioning(apiVerConfig =>
 //    }));
 //});
 //builder.Services.AddStartupTask();
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost";
+    options.ConfigurationOptions = new StackExchange.Redis.ConfigurationOptions()
+    {
+        AbortOnConnectFail = true,
+        EndPoints = { options.Configuration }
+    };
+});
 builder.Services.AddControllers(options =>
 {
     //options.RespectBrowserAcceptHeader = true;
