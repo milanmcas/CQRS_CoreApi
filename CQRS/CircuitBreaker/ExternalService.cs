@@ -34,7 +34,7 @@ namespace CQRS.CircuitBreaker
     {
         const string clientId = "aa6ff581-3faf-49df-9ca4-b7076b0c760e";
         //const string clientSecret = 'YOUR_CLIENT_SECRET';
-        //const string secret = "TTM8Q~Xd-3Bp5k.xImeB.NKvlIlKtF8oUcprWaq6";
+        const string secret = "TTM8Q~Xd-3Bp5k.xImeB.NKvlIlKtF8oUcprWaq6";
         const string tenantId = "8eb87a6e-8055-4135-b69d-f19c799ec045";
         const string functionUrl ="https://funclogic49387723.azurewebsites.net/api/GetSettingInfo";
         const string functionUrl1 = "https://funclogic49387723.azurewebsites.net/api/GetSettingInfo?code=FK2DXgkU3qrrUx166Rz1wOW2zf4EOSS4tSqU28nCPfw2AzFubRFrDQ==";
