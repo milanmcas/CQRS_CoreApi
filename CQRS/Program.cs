@@ -50,6 +50,7 @@ using CQRS.CircuitBreaker;
 using Polly;
 using System.Text;
 using Hangfire;
+using CQRS.DesignPattern.Structural.Decorator.Exam1;
 //using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);//creates WebApplicationBuilder class object
@@ -376,6 +377,8 @@ builder.Services.AddScoped<IValidator<UserRegistrationRequest>, UserRegistration
 //    }
 //});
 
+builder.Services.AddScoped<IPlayersService, PlayersService>();
+builder.Services.Decorate<IPlayersService, PlayersServiceLoggingDecorator>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

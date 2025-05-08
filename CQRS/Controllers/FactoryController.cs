@@ -9,6 +9,7 @@ using CQRS.DesignPattern.Prototype;
 using CQRS.DesignPattern.Singleton;
 using CQRS.DesignPattern.Structural.Adapter;
 using CQRS.DesignPattern.Structural.Decorator;
+using CQRS.DesignPattern.Structural.Decorator.Exam1;
 using CQRS.DesignPattern.Structural.Decorator.Live.FQCost;
 using CQRS.Filters;
 using CQRS.Models;
@@ -52,6 +53,7 @@ namespace CQRS.Controllers
         //IScopedService2 scopedService2,
         //IScopedService2 scopedService21,
         ITransientService2 transientService2,
+        IPlayersService playersService,
         ITransientService2 transientService21,
         IMasterUser masterUser,
         IUserService userService,
@@ -74,10 +76,10 @@ namespace CQRS.Controllers
              return await externalService.GetDataAsync();
         }
         //readonly CreditCard _creditCard;
-        [HttpGet("country")]
+        [HttpGet("milan1234")]
         public ActionResult<IEnumerable<CountryName>> GetCompanies(string s)
         {
-            
+            playersService.GetPlayersList();
             var list = CountryName.countryNames.Where(x => x.Name.StartsWith(s)).ToList();
             return Ok(list);
             //return Ok(CountryName.countryNames.Where(x => x.Name.Contains(s)));

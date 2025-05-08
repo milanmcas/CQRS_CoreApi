@@ -39,8 +39,9 @@ namespace CQRS.Extensions
             if (options == null)
             {
                 options = new DistributedCacheEntryOptions()
-                .SetSlidingExpiration(TimeSpan.FromMinutes(30))
-                .SetAbsoluteExpiration(TimeSpan.FromHours(1));
+                .SetSlidingExpiration(TimeSpan.FromMinutes(30))//Sliding expiration expires the cacheitem if it has not been accessed within the timespan provided. 
+                .SetAbsoluteExpiration(TimeSpan.FromHours(1));//Absolute expiration expires the cacheitem when the given time has been reached.
+                
             }
             if (cache.TryGetValue(key, out T? value) && value is not null)
             {

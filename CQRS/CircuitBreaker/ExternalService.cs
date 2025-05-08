@@ -83,10 +83,10 @@ namespace CQRS.CircuitBreaker
                 AuthenticationResult result = await app.AcquireTokenForClient(scopes)
                                     .ExecuteAsync();
                 var client = new HttpClient();
-                Console.WriteLine($"Calling {functionUrl1}");
+                //Console.WriteLine($"Calling {functionUrl1}");
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", result.AccessToken);
-                string json = await client.GetStringAsync(functionUrl1);
+                //string json = await client.GetStringAsync(functionUrl1);
                 return "This is the external service - "+ token;
                     }
             catch(Exception ex)
