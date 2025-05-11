@@ -79,8 +79,18 @@ namespace CQRS.Controllers
         [HttpGet("milan1234")]
         public ActionResult<IEnumerable<CountryName>> GetCompanies(string s)
         {
+            var a = 0;
             playersService.GetPlayersList();
             var list = CountryName.countryNames.Where(x => x.Name.StartsWith(s)).ToList();
+            //try
+            //{
+            //    var c = 2 / a;
+            //}
+            //catch (Exception)
+            //{
+
+            //}
+            var c = 2 / a;
             return Ok(list);
             //return Ok(CountryName.countryNames.Where(x => x.Name.Contains(s)));
         }

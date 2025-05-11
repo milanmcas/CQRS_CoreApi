@@ -51,6 +51,7 @@ using Polly;
 using System.Text;
 using Hangfire;
 using CQRS.DesignPattern.Structural.Decorator.Exam1;
+using CQRS.DesignPattern.Behavioral.Template;
 //using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);//creates WebApplicationBuilder class object
@@ -354,11 +355,12 @@ builder.Services.AddScoped<CQRS.DesignPattern.Factory.EmailNotification>()
 builder.Services.AddKeyedScoped<CreditCard, MoneyBack>("MoneyBack");
 builder.Services.AddKeyedScoped<CreditCard, Titanium>("Titanium");
 builder.Services.AddKeyedScoped<CreditCard, Platinum>("Platinum");
-
+builder.Services.AddScoped<HouseTemplate, ConcreteHouse>();
 builder.Services.AddScoped<IAggregatorRequestServiceFactory, AggregatorRequestServiceFactory>();
 builder.Services.AddScoped<IRequestProcessor, RequestProcessor>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 builder.Services.AddScoped<IValidator<UserRegistrationRequest>, UserRegistrationValidator>();
 //builder.Services.AddKeyedScoped<CreditCard, MoneyBack>(Card.MoneyBack);
 //builder.Services.AddKeyedScoped<CreditCard, Titanium>(Card.Titanium);
@@ -470,6 +472,7 @@ builder.Services.AddControllers(options =>
 //});
 
 var app = builder.Build();//creates WebApplication class instance
+//app.UseExceptionHandler("/error");
 app.UseExceptionHandler("/error");
 StaticDIClass.Initialize(app.Services.GetRequiredService<ISingletonService1>(), app.Services.GetRequiredService<IGenericService<Service1>>());//correct
 // Configure the HTTP request pipeline.
