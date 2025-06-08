@@ -1,57 +1,59 @@
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Web.SessionState;
 using Asp.Versioning;
+using Azure.Identity;
+using CQRS.CircuitBreaker;
 using CQRS.Data;
 using CQRS.Data.Repository;
 using CQRS.DesignPattern.Behavioral.Observer.Notification;
 using CQRS.DesignPattern.Behavioral.Strategy;
+using CQRS.DesignPattern.Behavioral.Template;
 using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.Factory;
 using CQRS.DesignPattern.Singleton;
 using CQRS.DesignPattern.Structural.Adapter;
 using CQRS.DesignPattern.Structural.Decorator;
+using CQRS.DesignPattern.Structural.Decorator.Exam1;
 using CQRS.DesignPattern.Structural.Decorator.Live;
 using CQRS.DesignPattern.Structural.Decorator.Live.FQCost;
 using CQRS.DesignPattern.Structural.Decorator.Notification;
 using CQRS.Features;
 using CQRS.Formatter;
 using CQRS.Handler;
+using CQRS.Hubs;
 using CQRS.Interceptor;
 using CQRS.Middleware;
 using CQRS.Models;
 using CQRS.NotificationSystem;
+using CQRS.OOPS;
 using CQRS.Resolution;
 using CQRS.Resolution.Generic;
-using CQRS.Security.Models;
 using CQRS.Security;
+using CQRS.Security.Models;
 using CQRS.ServiceLife;
 using CQRS.Services;
 using FluentValidation;
+using Hangfire;
 using MediatR;
 using MediatR.NotificationPublishers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Polly;
 using ProtoBuf.Extended.Meta;
+using SolrNet;
 using StackExchange.Redis;
 using System;
 using System.Configuration;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Text.Json.Serialization;
 using static CQRS.Services.SingletonService;
-using CQRS.Hubs;
-using Microsoft.AspNetCore.Mvc.Filters;
-using CQRS.OOPS;
-using CQRS.CircuitBreaker;
-using Polly;
-using System.Text;
-using Hangfire;
-using CQRS.DesignPattern.Structural.Decorator.Exam1;
-using CQRS.DesignPattern.Behavioral.Template;
 //using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);//creates WebApplicationBuilder class object
@@ -65,7 +67,27 @@ builder.Services.Configure<KestrelServerOptions>(options =>
 {
     options.Limits.MaxRequestBodySize = int.MaxValue;
 });
+//builder.Configuration.AddAzureKeyVault(
+//    new Uri($"https://{builder.Configuration["KeyVaultConfiguration:KeyVaultName"]}.vault.azure.net/"),
+//    //new DefaultAzureCredential(new DefaultAzureCredentialOptions
+//    //{
+//    //    ManagedIdentityClientId = builder.Configuration["KeyVaultConfiguration:ClientId"]
+
+//    //})
+//    new DefaultAzureCredential()
+//    );
+/*correct way to integrate azure ad with key vault*/
+//builder.Configuration.AddAzureKeyVault($"https://{builder.Configuration["KeyVaultConfiguration:KeyVaultName"]}.vault.azure.net/",
+//    builder.Configuration["KeyVaultConfiguration:ClientId"], builder.Configuration["KeyVaultConfiguration:ClientSecret"]);
+
+//Hangfire
+builder.Services.AddHangfire(x => x.UseSqlServerStorage(@"Data Source=DRPRIYATMAA;Initial Catalog=hangfire;User ID=milan;Password=priya;Trust Server Certificate=True;"));
+builder.Services.AddHangfireServer();
+
 builder.Services.AddDataProtection();
+builder.Services.AddSolrNet("http://localhost:8983/solr/product");
+
+builder.Services.AddScoped<IProductSolrRepository, ProductSolrRepository>();
 // Add memory cache service for rate limiting
 builder.Services.AddMemoryCache();
 builder.Services.AddHsts(options =>
@@ -355,7 +377,8 @@ builder.Services.AddScoped<CQRS.DesignPattern.Factory.EmailNotification>()
 builder.Services.AddKeyedScoped<CreditCard, MoneyBack>("MoneyBack");
 builder.Services.AddKeyedScoped<CreditCard, Titanium>("Titanium");
 builder.Services.AddKeyedScoped<CreditCard, Platinum>("Platinum");
-builder.Services.AddScoped<HouseTemplate, ConcreteHouse>();
+//builder.Services.AddScoped<HouseTemplate, ConcreteHouse>();
+builder.Services.AddScoped<IHouseTemplate, ConcreteHouse>();
 builder.Services.AddScoped<IAggregatorRequestServiceFactory, AggregatorRequestServiceFactory>();
 builder.Services.AddScoped<IRequestProcessor, RequestProcessor>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -483,6 +506,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseHsts(); // Add this line
 app.UseHttpsRedirection();
+app.UseHangfireDashboard("/hangfire");
 //app.MapWhen(context => context.Request.Path.Value!.StartsWith("/api/Factory/country", StringComparison.OrdinalIgnoreCase),
 //    appBuilder =>
 //    {
@@ -582,7 +606,24 @@ app.MapPost("/minimal/register", async (UserRegistrationRequest request, IValida
     // _service.RegisterUser(request);
     return Results.Accepted();
 });
+//app.Use(async (context, next) =>
+//{
+//    await context.Response.WriteAsync("Hello from 1st delegate.");
+//    await next();
+//});
 
+//app.Map("/auth", a =>
+//{
+//    a.Run(async (context) =>
+//    {
+//        await context.Response.WriteAsync("New branch for auth");
+//    });
+//});
+
+//app.Run(async (context) =>
+//{
+//    await context.Response.WriteAsync("Hello from 2nd Middleware");
+//});
 app.UseMiddleware<CustomMiddleware2>();
 app.UseEndpoints(endpoints => {
     endpoints.MapControllers();

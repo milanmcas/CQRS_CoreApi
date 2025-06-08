@@ -23,7 +23,7 @@ namespace CQRS.Handler
                 Status = StatusCodes.Status500InternalServerError,
                 Title = "Server error",
                 Detail=exception.Message,
-                Instance = $"{httpContext.Request.Method} {httpContext.Request.Path} {httpContext.Request.}",
+                Instance = $"{httpContext.Request.Method} {httpContext.Request.Path} {httpContext.Request.PathBase.Value}",
                 Type = exception.GetType().Name,
             };
             httpContext.Response.StatusCode = problemDetails.Status.Value;

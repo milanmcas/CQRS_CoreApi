@@ -1,6 +1,6 @@
 ﻿namespace CQRS.DesignPattern.Behavioral.Template
 {
-    public abstract class HouseTemplate
+    public abstract class HouseTemplate: IHouseTemplate
     {
         // Template Method defines the sequence for building a house
         public void BuildHouse()

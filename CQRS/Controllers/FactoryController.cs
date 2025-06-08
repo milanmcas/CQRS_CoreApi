@@ -2,6 +2,7 @@
 using Alachisoft.NCache.Runtime.MapReduce;
 using CQRS.CircuitBreaker;
 using CQRS.DesignPattern.Behavioral.Observer.Notification;
+using CQRS.DesignPattern.Behavioral.Template;
 using CQRS.DesignPattern.Builder;
 using CQRS.DesignPattern.DisposePattern;
 using CQRS.DesignPattern.Factory;
@@ -63,6 +64,7 @@ namespace CQRS.Controllers
         IExternalService externalService,
         Func<string, IService2> funcService2,
         IGenericService<Service1> genericService,
+        IHouseTemplate houseTemplate,
         [FromKeyedServices("service1")] IService service
 
 
@@ -74,6 +76,13 @@ namespace CQRS.Controllers
             //IExternalService externalService1 = new ExternalService();
             //await externalService1.GetDataAsync();
              return await externalService.GetDataAsync();
+        }
+        [HttpGet("template")]
+        public ActionResult GetHouse()
+        {
+            //IHouseTemplate houseTemplate1 = (IHouseTemplate)new ConcreteHouse();
+            houseTemplate.BuildHouse();
+            return Ok();
         }
         //readonly CreditCard _creditCard;
         [HttpGet("milan1234")]
