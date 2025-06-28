@@ -42,8 +42,12 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 using Polly;
+using Polly.CircuitBreaker;
+using Polly.Extensions.Http;
+using Polly.Fallback;
 using ProtoBuf.Extended.Meta;
 using SolrNet;
 using StackExchange.Redis;
@@ -55,6 +59,26 @@ using System.Text;
 using System.Text.Json.Serialization;
 using static CQRS.Services.SingletonService;
 //using FluentValidation;
+
+IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+{
+    return HttpPolicyExtensions
+        // HttpRequestException, 5XX and 408  
+        .HandleTransientHttpError()
+        // 404  
+        .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+        // Retry two times after delay  
+        .WaitAndRetryAsync(2, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)))
+        ;
+}
+IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
+{
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .CircuitBreakerAsync(
+            handledEventsAllowedBeforeBreaking: 4,
+            durationOfBreak: TimeSpan.FromMinutes(1));
+}
 
 var builder = WebApplication.CreateBuilder(args);//creates WebApplicationBuilder class object
 
@@ -167,6 +191,15 @@ var retryPolicy = Policy
         .Handle<Exception>()
         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(2));
 
+var retryPolicy1 = Policy
+        .Handle<HttpRequestException>()
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(2));
+
+var _retryPolicy = HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
+
 //Circuit Breaker: Stopping Requests to a Failing Service
 //A circuit breaker policy helps prevent overwhelming a failing service
 //by temporarily stopping requests after a certain number of failures.
@@ -197,11 +230,68 @@ var circuitBreakerPolicy = Policy
 //        {
 //            Content = new StringContent("{\"message\": \"Weather data currently unavailable\"}", Encoding.UTF8, "application/json")
 //        });
-
+builder.Services.AddHttpClient("csharpcorner")
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+        // important step  
+        .AddPolicyHandler(GetRetryPolicy())
+        //.AddTransientHttpErrorPolicy(GetRetryPolicy())
+        ;
 var fallbackPolicy = Policy<Result<string>>
        .Handle<Exception>()
        .FallbackAsync(new Result<string>("Fallback data: Inventory data unavailable"));
 builder.Services.AddSingleton<IAsyncPolicy<Result<string>>>(fallbackPolicy);
+var options = new CircuitBreakerStrategyOptions
+{
+    FailureRatio = 0.5,
+    SamplingDuration = TimeSpan.FromSeconds(10),
+    MinimumThroughput = 8,
+    BreakDuration = TimeSpan.FromSeconds(30),
+    ShouldHandle = new PredicateBuilder()
+        .Handle<HttpRequestException>()
+};
+
+builder.Services.AddHttpClient("PaymentService", client =>
+{
+    client.BaseAddress = new Uri("https://azure.paymentservice");
+}).AddPolicyHandler(_retryPolicy)
+.AddPolicyHandler(GetCircuitBreakerPolicy());
+
+builder.Services.AddHttpClient("PaymentService", client =>
+{
+    client.BaseAddress = new Uri("https://azure.paymentservice");
+})
+.AddResilienceHandler("RetryFallbackStrategy", resilienceBuilder =>
+{
+    resilienceBuilder
+        .AddRetry(new HttpRetryStrategyOptions
+        {
+            MaxRetryAttempts = 3,
+            Delay = TimeSpan.FromSeconds(2),
+            BackoffType = DelayBackoffType.Exponential,
+            UseJitter = true,
+            ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                .Handle<HttpRequestException>()
+                .HandleResult(response => !response.IsSuccessStatusCode)
+        })
+        //.AddCircuitBreaker()
+        .AddFallback(new FallbackStrategyOptions<HttpResponseMessage>
+        {
+            ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                .Handle<HttpRequestException>()
+                .HandleResult(response => !response.IsSuccessStatusCode),
+
+            FallbackAction = args =>
+            {
+                Console.WriteLine("All retries failed. Sending alert email...");
+                //await SendFailureEmailAsync();
+                return Outcome.FromResultAsValueTask(
+                    new HttpResponseMessage(HttpStatusCode.InternalServerError));
+            }
+        });
+});
+var pipeline = new ResiliencePipelineBuilder()
+    .AddCircuitBreaker(options)
+    .Build();
 
 var fallbackPolicy1 = Policy
        .Handle<Exception>()
@@ -633,3 +723,5 @@ app.MapDynamicControllerRoute<TranslationTransformer>("{language}/{controller}/{
 app.MapControllers();
 app.UseMiddleware<CustomMiddleware33>();
 app.Run();
+
+
